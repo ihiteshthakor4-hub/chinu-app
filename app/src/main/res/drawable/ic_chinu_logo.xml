@@ -1,0 +1,30 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Black Background -->
+    <path
+        android:fillColor="#0D0004"
+        android:pathData="M0,0h108v108h-108z" />
+
+    <!-- Outer Red Ring -->
+    <path
+        android:strokeColor="#FF1E38"
+        android:strokeWidth="4"
+        android:pathData="M54,14 A40,40 0 1,1 53.99,14 Z" />
+
+    <!-- Inner Glow Circle -->
+    <path
+        android:fillColor="#44FF1E38"
+        android:strokeColor="#FF4D5E"
+        android:strokeWidth="2.5"
+        android:pathData="M54,26 A28,28 0 1,1 53.99,26 Z" />
+
+    <!-- Center Red Core -->
+    <path
+        android:fillColor="#FF1E38"
+        android:pathData="M54,40 A14,14 0 1,1 53.99,40 Z" />
+</vector>
+  
