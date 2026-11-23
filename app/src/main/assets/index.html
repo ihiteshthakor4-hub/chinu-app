@@ -1,82 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>CHINU OS</title>
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CHINU OS v2.0</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="hud-container">
-    <!-- Top HUD Bar -->
-    <header class="hud-header">
-      <div class="brand">
-        <span class="dot"></span>
-        <span>CHINU OS <small>v2.0</small></span>
-      </div>
-      <div class="clock-box">
-        <div id="live-time">00:00:00</div>
-        <div id="live-date">LOADING...</div>
-      </div>
-      <button id="settings-btn" class="icon-btn" title="Settings">⚙️</button>
-    </header>
-
-    <!-- System Status Gauges (MAYA / Jarvis Style) -->
-    <section class="hud-stats">
-      <div class="stat-card">
-        <div class="stat-label">BATTERY</div>
-        <div class="stat-val" id="battery-val">--%</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">NETWORK</div>
-        <div class="stat-val" id="net-val">ONLINE</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">VOICE CORE</div>
-        <div class="stat-val">FEMALE</div>
-      </div>
-    </section>
-
-    <!-- Center Glowing CHINU Orb -->
-    <main class="core-section">
-      <div class="orb-wrapper" id="orb-btn">
-        <div class="ring ring-1"></div>
-        <div class="ring ring-2"></div>
-        <div class="ring ring-3"></div>
-        <div class="core-circle">
-          <span class="core-name">CHINU</span>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="brand">
+                <span class="dot"></span>
+                <span>CHINU OS <small>v2.0</small></span>
+            </div>
+            <div class="clock-box">
+                <div id="time">00:00:00</div>
+                <div id="date">LOADING...</div>
+            </div>
         </div>
-      </div>
-      <div id="status-text" class="status-text">TAP ORB TO SPEAK</div>
-    </main>
 
-    <!-- Live Chat / Command Terminal -->
-    <section class="terminal-box" id="chat-log">
-      <div class="msg ai"><b>CHINU:</b> Hello! I am CHINU, your personal AI assistant. Tap the orb or type a command.</div>
-    </section>
+        <!-- Status Cards -->
+        <div class="stats">
+            <div class="card">
+                <div class="label">BATTERY</div>
+                <div id="battery" class="val">--%</div>
+            </div>
+            <div class="card">
+                <div class="label">NETWORK</div>
+                <div class="val green">ONLINE</div>
+            </div>
+            <div class="card">
+                <div class="label">VOICE CORE</div>
+                <div class="val">FEMALE</div>
+            </div>
+        </div>
 
-    <!-- Bottom Input & Quick Controls -->
-    <footer class="hud-controls">
-      <button id="flash-btn" class="ctrl-btn" title="Flashlight">🔦</button>
-      <input type="text" id="text-input" placeholder="Ask CHINU anything..." autocomplete="off" />
-      <button id="send-btn" class="ctrl-btn">➤</button>
-      <button id="mic-btn" class="ctrl-btn mic-active">🎙️</button>
-    </footer>
-  </div>
+        <!-- Center Siri / CHINU Orb -->
+        <div class="orb-section">
+            <div id="orb" class="orb">
+                <div class="orb-inner">CHINU</div>
+            </div>
+            <div id="status" class="status-text">TAP ORB TO SPEAK</div>
+        </div>
 
-  <!-- Settings Modal (For Unlimited AI Smart Answers) -->
-  <div id="settings-modal" class="modal hidden">
-    <div class="modal-content">
-      <h3>CHINU AI SETTINGS</h3>
-      <p>Smart online answers mate Gemini API Key (optional):</p>
-      <input type="password" id="api-key-input" placeholder="Paste Gemini API Key here..." />
-      <div class="modal-actions">
-        <button id="save-settings">SAVE</button>
-        <button id="close-settings">CLOSE</button>
-      </div>
+        <!-- Chat Output -->
+        <div id="chat-box" class="chat-box">
+            <div class="msg chinu"><b>CHINU:</b> Hello! હું ચીનુ છું. બોલો, આજે શું કામ કરું?</div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="controls">
+            <button id="flash-btn" class="icon-btn">🔦</button>
+            <input id="user-input" type="text" placeholder="Ask CHINU anything...">
+            <button id="send-btn" class="icon-btn">➤</button>
+            <button id="mic-btn" class="icon-btn mic">🎙️</button>
+        </div>
     </div>
-  </div>
 
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
