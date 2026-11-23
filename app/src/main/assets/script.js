@@ -1,4 +1,4 @@
-// ===== CHINU OS v2.0 - Natural Female Voice + Jarvis Core =====
+// ===== CHINU OS v2.1 - Native Android Voice + Mic + Jarvis Core =====
 
 const orbBtn = document.getElementById("orb-btn");
 const micBtn = document.getElementById("mic-btn");
@@ -19,7 +19,6 @@ const saveSettings = document.getElementById("save-settings");
 const closeSettings = document.getElementById("close-settings");
 
 let isFlashOn = false;
-let selectedVoice = null;
 let geminiApiKey = localStorage.getItem("chinu_api_key") || "";
 
 // ===== 1. LIVE CLOCK & DATE =====
@@ -44,7 +43,7 @@ if (navigator.getBattery) {
     };
     updateBat();
     battery.addEventListener("levelchange", updateBat);
-  });
+  }).catch(() => {});
 }
 
 function updateNetwork() {
@@ -55,65 +54,43 @@ window.addEventListener("online", updateNetwork);
 window.addEventListener("offline", updateNetwork);
 updateNetwork();
 
-// ===== 3. NATURAL 20+ FEMALE VOICE ENGINE =====
-function loadFemaleVoice() {
-  const voices = window.speechSynthesis.getVoices();
-  if (!voices.length) return;
+// ===== 3. NATIVE ANDROID FEMALE VOICE ENGINE =====
+function speak(text) {
+  if (!text) return;
 
-  // Priority: Natural Indian English / Hindi Female voices (Mature 20+ tone)
-  const preferredNames = [
-    "Google हिन्दी",
-    "Google English (India)",
-    "en-in-x-enc-network",
-    "en-in-x-ene-network",
-    "en-in-x-enc-local",
-    "hi-in-x-hia-network",
-    "hi-in-x-hic-network",
-    "Samantha",
-    "Zira",
-    "Female"
-  ];
+  orbBtn.classList.add("speaking");
+  statusText.textContent = "CHINU IS SPEAKING...";
 
-  for (const name of preferredNames) {
-    const found = voices.find(v => v.name.toLowerCase().includes(name.toLowerCase()));
-    if (found) {
-      selectedVoice = found;
-      return;
-    }
+  // Use Android Native TTS first
+  if (window.ChinuNative && typeof window.ChinuNative.speak === "function") {
+    window.ChinuNative.speak(text);
+    const estMs = Math.max(1800, text.length * 75);
+    setTimeout(() => {
+      orbBtn.classList.remove("speaking");
+      statusText.textContent = "TAP ORB TO SPEAK";
+    }, estMs);
+    return;
   }
 
-  // Fallback to any en-IN or hi-IN or female-sounding voice
-  selectedVoice =
-    voices.find(v => v.lang === "en-IN") ||
-    voices.find(v => v.lang === "hi-IN") ||
-    voices.find(v => v.lang.startsWith("en")) ||
-    voices[0];
-}
+  // Browser fallback
+  if ("speechSynthesis" in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-IN";
+      utter.pitch = 1.05;
+      utter.rate = 0.98;
+      utter.onend = () => {
+        orbBtn.classList.remove("speaking");
+        statusText.textContent = "TAP ORB TO SPEAK";
+      };
+      window.speechSynthesis.speak(utter);
+      return;
+    } catch (e) {}
+  }
 
-window.speechSynthesis.onvoiceschanged = loadFemaleVoice;
-loadFemaleVoice();
-
-function speak(text) {
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  if (!selectedVoice) loadFemaleVoice();
-  if (selectedVoice) utter.voice = selectedVoice;
-
-  // Natural 20+ adult female voice settings (not robotic, not child-like)
-  utter.pitch = 1.05;
-  utter.rate = 0.98;
-  utter.volume = 1.0;
-
-  utter.onstart = () => {
-    orbBtn.classList.add("speaking");
-    statusText.textContent = "CHINU IS SPEAKING...";
-  };
-  utter.onend = () => {
-    orbBtn.classList.remove("speaking");
-    statusText.textContent = "TAP ORB TO SPEAK";
-  };
-
-  window.speechSynthesis.speak(utter);
+  orbBtn.classList.remove("speaking");
+  statusText.textContent = "TAP ORB TO SPEAK";
 }
 
 // ===== 4. CHAT LOG HELPER =====
@@ -125,12 +102,11 @@ function addMessage(sender, text) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-// ===== 5. FLASHLIGHT CONTROL (NATIVE ANDROID BRIDGE) =====
+// ===== 5. FLASHLIGHT CONTROL =====
 function toggleFlashlight(state) {
   isFlashOn = typeof state === "boolean" ? state : !isFlashOn;
   if (window.ChinuNative && typeof window.ChinuNative.setFlashlight === "function") {
-    window.ChinuNative.setFlashlight(isFlashOn);
-    return true;
+    return window.ChinuNative.setFlashlight(isFlashOn);
   }
   return false;
 }
@@ -146,7 +122,7 @@ flashBtn.addEventListener("click", () => {
 
 // ===== 6. JARVIS COMMAND PROCESSOR =====
 async function handleCommand(rawCmd) {
-  const cmd = rawCmd.trim();
+  const cmd = (rawCmd || "").trim();
   if (!cmd) return;
 
   addMessage("user", cmd);
@@ -290,56 +266,48 @@ async function handleCommand(rawCmd) {
   }
 
   // --- Smart Fallback (Google Search) ---
-  const fallback = `Mujhe iske baare mein exact jaankari nahi mili, main Google par "${cmd}" search kar rahi hoon.`;
+  const fallback = `Google par "${cmd}" search kar rahi hoon.`;
   addMessage("ai", fallback);
   speak(fallback);
   window.open(`https://www.google.com/search?q=${encodeURIComponent(cmd)}`, "_blank");
 }
 
-// ===== 7. VOICE RECOGNITION (SPEECH TO TEXT) =====
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recognition = null;
-
-if (SpeechRecognition) {
-  recognition = new SpeechRecognition();
-  recognition.lang = "en-IN";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
-
-  recognition.onstart = () => {
-    orbBtn.classList.add("listening");
-    statusText.textContent = "LISTENING...";
-  };
-
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    handleCommand(transcript);
-  };
-
-  recognition.onerror = () => {
-    orbBtn.classList.remove("listening");
-    statusText.textContent = "TAP ORB TO SPEAK";
-  };
-
-  recognition.onend = () => {
-    orbBtn.classList.remove("listening");
-    if (!orbBtn.classList.contains("speaking")) {
-      statusText.textContent = "TAP ORB TO SPEAK";
-    }
-  };
-}
+// ===== 7. NATIVE VOICE RECOGNITION (SPEECH TO TEXT) =====
+window.onNativeSpeechResult = function (spokenText) {
+  orbBtn.classList.remove("listening");
+  statusText.textContent = "TAP ORB TO SPEAK";
+  if (spokenText) {
+    handleCommand(spokenText);
+  }
+};
 
 function startListening() {
-  if (!recognition) {
-    const msg = "Voice mic is device mein support nahi ho raha, kripya type karein.";
-    addMessage("ai", msg);
-    speak(msg);
+  if (window.ChinuNative && typeof window.ChinuNative.startListening === "function") {
+    orbBtn.classList.add("listening");
+    statusText.textContent = "LISTENING...";
+    window.ChinuNative.startListening();
     return;
   }
-  try {
-    window.speechSynthesis.cancel();
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.onstart = () => {
+      orbBtn.classList.add("listening");
+      statusText.textContent = "LISTENING...";
+    };
+    recognition.onresult = (e) => handleCommand(e.results[0][0].transcript);
+    recognition.onend = () => {
+      orbBtn.classList.remove("listening");
+      statusText.textContent = "TAP ORB TO SPEAK";
+    };
     recognition.start();
-  } catch (e) {}
+  } else {
+    const msg = "Mic start nahi ho paya, kripya type karein.";
+    addMessage("ai", msg);
+    speak(msg);
+  }
 }
 
 orbBtn.addEventListener("click", startListening);
@@ -375,4 +343,3 @@ saveSettings.addEventListener("click", () => {
   addMessage("ai", msg);
   speak(msg);
 });
-  
