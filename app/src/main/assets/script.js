@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const chatBox = document.querySelector("#chat-box, #chatBox, .chat-box, #output");
     const statusText = document.querySelector("#status, .status-text, #orb-status");
 
-    // Clock & Date Update
     function updateClock() {
         const now = new Date();
         const timeEl = document.querySelector("#time, #clock, .time");
@@ -18,7 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Battery Update
     if (navigator.getBattery) {
         navigator.getBattery().then(b => {
             const batEl = document.querySelector("#battery, #battery-level, .battery");
@@ -28,20 +26,21 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    function showReply(text) {
+    function showReply(text, lang = "gu") {
         if (chatBox) {
             chatBox.innerHTML = `<div class="msg chinu"><b>CHINU:</b> ${text}</div>`;
         }
         if (window.Android && Android.speak) {
-            Android.speak(text);
-        } else if ("speechSynthesis" in window) {
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = "en-IN";
-            window.speechSynthesis.speak(u);
+            Android.speak(text, lang);
         }
     }
 
-    // Listening UI Callbacks from Android
+    // Check if user is speaking Hindi
+    function isHindi(cmd) {
+        const hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas"];
+        return hindiWords.some(w => cmd.includes(w));
+    }
+
     window.onListeningStart = () => {
         if (statusText) statusText.textContent = "LISTENING...";
         if (orb) orb.classList.add("listening");
@@ -59,97 +58,108 @@ document.addEventListener("DOMContentLoaded", () => {
     function startVoice() {
         if (window.Android && Android.startListening) {
             Android.startListening();
-        } else {
-            showReply("Voice recognition is ready on the Android app.");
         }
     }
 
     function handleCommand(rawText) {
         const cmd = rawText.trim().toLowerCase();
         if (!cmd) return;
+        const hi = isHindi(cmd);
 
-        // 1. Flashlight / Torch
+        // 1. Flashlight
         if (cmd.includes("torch") || cmd.includes("flash") || cmd.includes("light")) {
             if (window.Android && Android.toggleFlashlight) {
                 const isOn = Android.toggleFlashlight();
-                showReply(isOn ? "Flashlight chalu kari didhi chhe." : "Flashlight bandh kari didhi chhe.");
-            } else {
-                showReply("Flashlight toggle thai gai chhe.");
+                if (hi) {
+                    showReply(isOn ? "फ्लैशलाइट चालू कर दी है।" : "फ्लैशलाइट बंद कर दी है।", "hi");
+                } else {
+                    showReply(isOn ? "ફ્લેશલાઇટ ચાલુ કરી દીધી છે." : "ફ્લેશલાઇટ બંધ કરી દીધી છે.", "gu");
+                }
             }
             return;
         }
 
-        // 2. Open Apps (WhatsApp, YouTube, Camera, Instagram, Settings, Phone, Chrome)
+        // 2. Open Apps
         const apps = ["whatsapp", "youtube", "instagram", "insta", "camera", "settings", "setting", "chrome", "phone", "call", "dialer"];
         for (const app of apps) {
             if (cmd.includes(app) && (cmd.includes("open") || cmd.includes("khol") || cmd.includes("chalu") || cmd.includes("start") || cmd === app)) {
                 if (window.Android && Android.openApp) {
                     const ok = Android.openApp(app);
-                    showReply(ok ? `${app} kholi rahyu chhu.` : `Tamara phone ma ${app} nathi malyu.`);
+                    if (hi) {
+                        showReply(ok ? `${app} खोल रही हूँ।` : `आपके फोन में ${app} नहीं मिला।`, "hi");
+                    } else {
+                        showReply(ok ? `${app} ખોલી રહી છું.` : `તમારા ફોનમાં ${app} મળ્યું નથી.`, "gu");
+                    }
                 }
                 return;
             }
         }
 
         // 3. Time & Date
-        if (cmd.includes("time") || cmd.includes("samay") || cmd.includes("ketla vagya")) {
+        if (cmd.includes("time") || cmd.includes("samay") || cmd.includes("vagya") || cmd.includes("baje")) {
             const t = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
-            showReply(`Atyare ${t} vagya chhe.`);
+            if (hi) showReply(`अभी ${t} बजे हैं।`, "hi");
+            else showReply(`અત્યારે ${t} વાગ્યા છે.`, "gu");
             return;
         }
-        if (cmd.includes("date") || cmd.includes("tarikh") || cmd.includes("aaje kayo var")) {
+        if (cmd.includes("date") || cmd.includes("tarikh") || cmd.includes("din")) {
             const d = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
-            showReply(`Aaje ${d} chhe.`);
+            if (hi) showReply(`आज ${d} है।`, "hi");
+            else showReply(`આજે ${d} છે.`, "gu");
             return;
         }
 
-        // 4. Explicit Google Search ONLY when asked
+        // 4. Google Search (Only when asked)
         if (cmd.startsWith("search ") || cmd.includes("google par search") || cmd.includes("google search")) {
             const q = cmd.replace("google par search", "").replace("google search", "").replace("search", "").trim();
             if (q && window.Android && Android.searchGoogle) {
-                showReply(`Google par ${q} search karu chhu.`);
+                if (hi) showReply(`गूगल पर ${q} सर्च कर रही हूँ।`, "hi");
+                else showReply(`ગૂગલ પર ${q} સર્ચ કરી રહી છું.`, "gu");
                 Android.searchGoogle(q);
-            } else {
-                showReply("Su search karvu chhe e to kaho!");
             }
             return;
         }
 
-        // 5. Offline Friendly & Empathetic Conversation
-        if (cmd.includes("hello") || cmd.includes("hi") || cmd.includes("hey") || cmd.includes("namaste") || cmd.includes("kem cho") || cmd.includes("kem chho")) {
-            showReply("Hello! Hu ekdam majama chhu. Bolo, aaje tamara mate su kam karu?");
+        // 5. Chat & Emotions
+        if (cmd.includes("hello") || cmd.includes("hi") || cmd.includes("hey") || cmd.includes("namaste") || cmd.includes("kem cho") || cmd.includes("kem chho") || cmd.includes("kaise ho") || cmd.includes("kaisi ho")) {
+            if (hi) showReply("नमस्ते! मैं बिल्कुल ठीक हूँ। बताइए, आज आपके लिए क्या करूँ?", "hi");
+            else showReply("હેલો! હું એકદમ મજામાં છું. બોલો, આજે તમારા માટે શું કામ કરું?", "gu");
             return;
         }
         if (cmd.includes("good morning")) {
-            showReply("Good morning! Aajno divas tamaro khub saras jay.");
+            if (hi) showReply("गुड मॉर्निंग! आपका दिन बहुत अच्छा जाए।", "hi");
+            else showReply("ગુડ મોર્નિંગ! તમારો આજનો દિવસ ખૂબ સરસ જાય.", "gu");
             return;
         }
         if (cmd.includes("good night")) {
-            showReply("Good night! Aaram karo, kale pacha malishu.");
+            if (hi) showReply("गुड नाइट! आराम कीजिए, कल फिर मिलेंगे।", "hi");
+            else showReply("ગુડ નાઇટ! આરામ કરો, કાલે પાછા મળીશું.", "gu");
             return;
         }
-        if (cmd.includes("taru naam") || cmd.includes("your name") || cmd.includes("who are you") || cmd.includes("tu kon")) {
-            showReply("Maru naam CHINU chhe. Hu tamari personal AI assistant chhu.");
+        if (cmd.includes("naam") || cmd.includes("name") || cmd.includes("who are you") || cmd.includes("kon")) {
+            if (hi) showReply("मेरा नाम चीनू है। मैं आपकी पर्सनल एआई असिस्टेंट हूँ।", "hi");
+            else showReply("મારું નામ ચીનુ છે. હું તમારી પર્સનલ એઆઈ આસિસ્ટન્ટ છું.", "gu");
             return;
         }
-        if (cmd.includes("sad") || cmd.includes("mood kharab") || cmd.includes("tension") || cmd.includes("thaki gayo") || cmd.includes("stress")) {
-            showReply("Chinta na karo, hu tamari sathe j chhu. Thodo aaram kari lo, badhu barobar thai jase.");
+        if (cmd.includes("sad") || cmd.includes("mood kharab") || cmd.includes("tension") || cmd.includes("thak") || cmd.includes("udas")) {
+            if (hi) showReply("चिंता मत कीजिए, मैं आपके साथ हूँ। थोड़ा आराम कर लीजिए, सब ठीक हो जाएगा।", "hi");
+            else showReply("ચિંતા ના કરો, હું તમારી સાથે જ છું. થોડો આરામ કરી લો, બધું બરાબર થઈ જશે.", "gu");
             return;
         }
         if (cmd.includes("thank") || cmd.includes("shukriya") || cmd.includes("aabhar")) {
-            showReply("Welcome! Tamari madad karine mane hamesha khushi thay chhe.");
-            return;
-        }
-        if (cmd.includes("joke") || cmd.includes("hasav")) {
-            showReply("Ek vaar mobile ne charge par mukyo, pan switch on karvanu bhuli gaya... pachi khabar padi ke jindagi ma pan ghani vaar aavu j thay chhe!");
+            if (hi) showReply("आपका स्वागत है! आपकी मदद करके मुझे हमेशा खुशी होती है।", "hi");
+            else showReply("વેલકમ! તમારી મદદ કરીને મને હંમેશા ખુશી થાય છે.", "gu");
             return;
         }
 
-        // 6. Default Offline Reply (No random Google Search!)
-        showReply(`Me tamari vaat sambhali: "${rawText}". Tame mane flashlight, time, WhatsApp, YouTube ke Camera kholva kahi shako chho — athva Google mate "search" boline kaho.`);
+        // 6. Default Offline Reply
+        if (hi) {
+            showReply("मैंने आपकी बात सुनी। आप मुझसे फ्लैशलाइट, समय, व्हाट्सएप, यूट्यूब या कैमरा खोलने के लिए कह सकते हैं।", "hi");
+        } else {
+            showReply("મેં તમારી વાત સાંભળી. તમે મને ફ્લેશલાઇટ, સમય, વોટ્સએપ, યુટ્યુબ કે કેમેરા ખોલવા કહી શકો છો.", "gu");
+        }
     }
 
-    // Button Event Listeners
     if (orb) orb.addEventListener("click", startVoice);
     if (micBtn) micBtn.addEventListener("click", startVoice);
     if (flashBtn) flashBtn.addEventListener("click", () => handleCommand("flashlight"));
