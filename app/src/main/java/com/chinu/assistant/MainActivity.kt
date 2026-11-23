@@ -104,18 +104,27 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale("en", "IN")
-            val voices = tts?.voices
-            val femaleVoice = voices?.firstOrNull { v ->
-                v.locale.language == "en" && v.locale.country == "IN" &&
-                !v.isNetworkConnectionRequired &&
-                (v.name.contains("ene", true) || v.name.contains("end", true) || v.name.contains("female", true))
-            } ?: voices?.firstOrNull { v -> v.locale.language == "en" && v.locale.country == "IN" }
-
-            if (femaleVoice != null) tts?.voice = femaleVoice
-            tts?.setPitch(1.05f)
-            tts?.setSpeechRate(0.95f)
+            setVoiceForLanguage("gu")
         }
+    }
+
+    private fun setVoiceForLanguage(langCode: String) {
+        val locale = when (langCode) {
+            "gu" -> Locale("gu", "IN")
+            "hi" -> Locale("hi", "IN")
+            else -> Locale("en", "IN")
+        }
+        tts?.language = locale
+        val voices = tts?.voices
+        val femaleVoice = voices?.firstOrNull { v ->
+            v.locale.language == locale.language &&
+            !v.name.contains("end", true) &&
+            !v.name.contains("ene", true) &&
+            !v.name.contains("male", true)
+        }
+        if (femaleVoice != null) tts?.voice = femaleVoice
+        tts?.setPitch(1.05f)
+        tts?.setSpeechRate(0.95f)
     }
 
     inner class ChinuBridge {
@@ -132,8 +141,11 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         }
 
         @JavascriptInterface
-        fun speak(text: String) {
-            runOnUiThread { tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "CHINU_TTS") }
+        fun speak(text: String, langCode: String) {
+            runOnUiThread {
+                setVoiceForLanguage(langCode)
+                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "CHINU_TTS")
+            }
         }
 
         @JavascriptInterface
