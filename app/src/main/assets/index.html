@@ -38,7 +38,7 @@
 
         <!-- Center Siri / CHINU Orb -->
         <div class="orb-section">
-            <div id="orb" class="orb">
+            <div id="orb" class="orb" onclick="startVoice()">
                 <div class="orb-inner">CHINU</div>
             </div>
             <div id="status" class="status-text">TAP ORB TO SPEAK</div>
@@ -51,13 +51,221 @@
 
         <!-- Bottom Controls -->
         <div class="controls">
-            <button id="flash-btn" class="icon-btn">🔦</button>
-            <input id="user-input" type="text" placeholder="Ask CHINU anything...">
-            <button id="send-btn" class="icon-btn">➤</button>
-            <button id="mic-btn" class="icon-btn mic">🎙️</button>
+            <button id="flash-btn" class="icon-btn" onclick="handleCommand('flashlight')">🔦</button>
+            <input id="user-input" type="text" placeholder="Ask CHINU anything..." onkeypress="if(event.key==='Enter') sendText()">
+            <button id="send-btn" class="icon-btn" onclick="sendText()">➤</button>
+            <button id="mic-btn" class="icon-btn mic" onclick="startVoice()">🎙️</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        function updateClock() {
+            var now = new Date();
+            var timeEl = document.getElementById("time");
+            var dateEl = document.getElementById("date");
+            if (timeEl) timeEl.textContent = now.toTimeString().split(" ")[0];
+            if (dateEl) dateEl.textContent = now.toDateString().toUpperCase();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        if (navigator.getBattery) {
+            navigator.getBattery().then(function(b) {
+                var batEl = document.getElementById("battery");
+                function updateBat() { if (batEl) batEl.textContent = Math.round(b.level * 100) + "%"; }
+                updateBat();
+                b.addEventListener("levelchange", updateBat);
+            });
+        }
+
+        function showReply(text, lang) {
+            lang = lang || "gu";
+            var chatBox = document.getElementById("chat-box");
+            if (chatBox) {
+                chatBox.innerHTML = '<div class="msg chinu"><b>CHINU:</b> ' + text + '</div>';
+            }
+            if (window.Android && Android.speak) {
+                Android.speak(text, lang);
+            }
+        }
+
+        function isHindi(cmd) {
+            var hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas", "bhejo", "chalao"];
+            for (var i = 0; i < hindiWords.length; i++) {
+                if (cmd.indexOf(hindiWords[i]) !== -1) return true;
+            }
+            return false;
+        }
+
+        window.onListeningStart = function() {
+            var st = document.getElementById("status");
+            var orb = document.getElementById("orb");
+            if (st) st.textContent = "LISTENING...";
+            if (orb) orb.classList.add("listening");
+        };
+
+        window.onListeningEnd = function() {
+            var st = document.getElementById("status");
+            var orb = document.getElementById("orb");
+            if (st) st.textContent = "TAP ORB TO SPEAK";
+            if (orb) orb.classList.remove("listening");
+        };
+
+        window.onVoiceResult = function(spokenText) {
+            handleCommand(spokenText);
+        };
+
+        function startVoice() {
+            if (window.Android && Android.startListening) {
+                Android.startListening();
+            } else {
+                showReply("Mic માત્ર CHINU એપમાં જ ચાલશે.", "gu");
+            }
+        }
+
+        function sendText() {
+            var input = document.getElementById("user-input");
+            if (input && input.value.trim() !== "") {
+                handleCommand(input.value);
+                input.value = "";
+            }
+        }
+
+        function handleCommand(rawText) {
+            var cmd = rawText.trim().toLowerCase();
+            if (!cmd) return;
+            var hi = isHindi(cmd);
+            var orb = document.getElementById("orb");
+
+            // 0. Hey Chinu + Siri Glow
+            if (cmd.indexOf("hey chinu") !== -1 || cmd === "chinu" || cmd.indexOf("hi chinu") !== -1) {
+                if (orb) {
+                    orb.classList.add("siri-glow");
+                    setTimeout(function() { orb.classList.remove("siri-glow"); }, 4000);
+                }
+                if (hi) showReply("जी बोलिए, मैं सुन रही हूँ। क्या काम है?", "hi");
+                else showReply("હા બોલો, હું સાંભળી રહી છું. શું કામ છે?", "gu");
+                return;
+            }
+
+            // 1. YouTube Search
+            if (cmd.indexOf("youtube") !== -1 && (cmd.indexOf("search") !== -1 || cmd.indexOf("play") !== -1 || cmd.indexOf("chalav") !== -1 || cmd.indexOf("chalao") !== -1 || cmd.indexOf("par ") !== -1 || cmd.indexOf("ma ") !== -1)) {
+                var q = cmd.replace(/youtube|par|ma|on|search|kar|karo|play|chalav|chalao/g, "").trim();
+                if (q && window.Android && Android.searchYouTube) {
+                    if (hi) showReply("यूट्यूब पर " + q + " सर्च कर रही हूँ।", "hi");
+                    else showReply("યુટ્યુબ પર " + q + " સર્ચ કરી રહી છું.", "gu");
+                    Android.searchYouTube(q);
+                    return;
+                }
+            }
+
+            // 2. WhatsApp Message
+            if ((cmd.indexOf("whatsapp") !== -1 && (cmd.indexOf("message") !== -1 || cmd.indexOf("msg") !== -1 || cmd.indexOf("mokal") !== -1 || cmd.indexOf("bhejo") !== -1)) || cmd.indexOf("message ") === 0 || cmd.indexOf("msg ") === 0) {
+                var msg = rawText.replace(/whatsapp|message|msg|par|ma|mokal|bhejo|send|kar|karo/gi, "").trim();
+                if (msg && window.Android && Android.sendWhatsApp) {
+                    if (hi) showReply("व्हाट्सएप खोल रही हूँ, कृपया कॉन्टैक्ट चुनें।", "hi");
+                    else showReply("વોટ્સએપ ખોલી રહી છું, કોન્ટેક્ટ સિલેક્ટ કરીને સેન્ડ કરી દો.", "gu");
+                    Android.sendWhatsApp(msg);
+                    return;
+                }
+            }
+
+            // 3. Call number
+            var phoneMatch = cmd.match(/\d{7,12}/);
+            if ((cmd.indexOf("call") !== -1 || cmd.indexOf("dial") !== -1 || cmd.indexOf("phone") !== -1) && phoneMatch) {
+                if (window.Android && Android.dialNumber) {
+                    if (hi) showReply(phoneMatch[0] + " पर कॉल लगा रही हूँ।", "hi");
+                    else showReply(phoneMatch[0] + " પર કોલ લગાવી રહી છું.", "gu");
+                    Android.dialNumber(phoneMatch[0]);
+                    return;
+                }
+            }
+
+            // 4. Flashlight
+            if (cmd.indexOf("torch") !== -1 || cmd.indexOf("flash") !== -1 || cmd.indexOf("light") !== -1) {
+                if (window.Android && Android.toggleFlashlight) {
+                    var isOn = Android.toggleFlashlight();
+                    if (hi) showReply(isOn ? "फ्लैशलाइट चालू कर दी है।" : "फ्लैशलाइट बंद कर दी है।", "hi");
+                    else showReply(isOn ? "ફ્લેશલાઇટ ચાલુ કરી દીધી છે." : "ફ્લેશલાઇટ બંધ કરી દીધી છે.", "gu");
+                }
+                return;
+            }
+
+            // 5. Open Apps
+            var apps = ["whatsapp", "youtube", "instagram", "insta", "camera", "settings", "setting", "chrome", "phone", "call", "dialer"];
+            for (var i = 0; i < apps.length; i++) {
+                var app = apps[i];
+                if (cmd.indexOf(app) !== -1 && (cmd.indexOf("open") !== -1 || cmd.indexOf("khol") !== -1 || cmd.indexOf("chalu") !== -1 || cmd.indexOf("start") !== -1 || cmd === app)) {
+                    if (window.Android && Android.openApp) {
+                        var ok = Android.openApp(app);
+                        if (hi) showReply(ok ? app + " खोल रही हूँ।" : "आपके फोन में " + app + " नहीं मिला।", "hi");
+                        else showReply(ok ? app + " ખોલી રહી છું." : "તમારા ફોનમાં " + app + " મળ્યું નથી.", "gu");
+                    }
+                    return;
+                }
+            }
+
+            // 6. Time & Date
+            if (cmd.indexOf("time") !== -1 || cmd.indexOf("samay") !== -1 || cmd.indexOf("vagya") !== -1 || cmd.indexOf("baje") !== -1) {
+                var t = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+                if (hi) showReply("अभी " + t + " बजे हैं।", "hi");
+                else showReply("અત્યારે " + t + " વાગ્યા છે.", "gu");
+                return;
+            }
+            if (cmd.indexOf("date") !== -1 || cmd.indexOf("tarikh") !== -1 || cmd.indexOf("din") !== -1) {
+                var d = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+                if (hi) showReply("आज " + d + " है।", "hi");
+                else showReply("આજે " + d + " છે.", "gu");
+                return;
+            }
+
+            // 7. Google Search
+            if (cmd.indexOf("search ") === 0 || cmd.indexOf("google par search") !== -1 || cmd.indexOf("google search") !== -1) {
+                var sq = cmd.replace(/google par search|google search|search/g, "").trim();
+                if (sq && window.Android && Android.searchGoogle) {
+                    if (hi) showReply("गूगल पर " + sq + " सर्च कर रही हूँ।", "hi");
+                    else showReply("ગૂગલ પર " + sq + " સર્ચ કરી રહી છું.", "gu");
+                    Android.searchGoogle(sq);
+                }
+                return;
+            }
+
+            // 8. Chat & Emotions
+            if (cmd.indexOf("hello") !== -1 || cmd.indexOf("hi") !== -1 || cmd.indexOf("hey") !== -1 || cmd.indexOf("namaste") !== -1 || cmd.indexOf("kem cho") !== -1 || cmd.indexOf("kem chho") !== -1 || cmd.indexOf("kaise ho") !== -1 || cmd.indexOf("kaisi ho") !== -1) {
+                if (hi) showReply("नमस्ते! मैं बिल्कुल ठीक हूँ। बताइए, आज आपके लिए क्या करूँ?", "hi");
+                else showReply("હેલો! હું એકદમ મજામાં છું. બોલો, આજે તમારા માટે શું કામ કરું?", "gu");
+                return;
+            }
+            if (cmd.indexOf("good morning") !== -1) {
+                if (hi) showReply("गुड मॉर्निंग! आपका दिन बहुत अच्छा जाए।", "hi");
+                else showReply("ગુડ મોર્નિંગ! તમારો આજનો દિવસ ખૂબ સરસ જાય.", "gu");
+                return;
+            }
+            if (cmd.indexOf("good night") !== -1) {
+                if (hi) showReply("गुड नाइट! आराम कीजिए, कल फिर मिलेंगे।", "hi");
+                else showReply("ગુડ નાઇટ! આરામ કરો, કાલે પાછા મળીશું.", "gu");
+                return;
+            }
+            if (cmd.indexOf("naam") !== -1 || cmd.indexOf("name") !== -1 || cmd.indexOf("who are you") !== -1 || cmd.indexOf("kon") !== -1) {
+                if (hi) showReply("मेरा नाम चीनू है। मैं आपकी पर्सनल एआई असिस्टेंट हूँ।", "hi");
+                else showReply("મારું નામ ચીનુ છે. હું તમારી પર્સનલ એઆઈ આસિસ્ટન્ટ છું.", "gu");
+                return;
+            }
+            if (cmd.indexOf("sad") !== -1 || cmd.indexOf("mood kharab") !== -1 || cmd.indexOf("tension") !== -1 || cmd.indexOf("thak") !== -1 || cmd.indexOf("udas") !== -1) {
+                if (hi) showReply("चिंता मत कीजिए, मैं आपके साथ हूँ। थोड़ा आराम कर लीजिए, सब ठीक हो जाएगा।", "hi");
+                else showReply("ચિંતા ના કરો, હું તમારી સાથે જ છું. થોડો આરામ કરી લો, બધું બરાબર થઈ જશે.", "gu");
+                return;
+            }
+            if (cmd.indexOf("thank") !== -1 || cmd.indexOf("shukriya") !== -1 || cmd.indexOf("aabhar") !== -1) {
+                if (hi) showReply("आपका स्वागत है! आपकी मदद करके मुझे हमेशा खुशी होती है।", "hi");
+                else showReply("વેલકમ! તમારી મદદ કરીને મને હંમેશા ખુશી થાય છે.", "gu");
+                return;
+            }
+
+            // 9. Default Reply
+            if (hi) showReply("मैंने आपकी बात सुनी। आप यूट्यूब सर्च, व्हाट्सएप मैसेज, कॉल या फ्लैशलाइट के लिए कह सकते हैं।", "hi");
+            else showReply("મેં તમારી વાત સાંભળી. તમે યુટ્યુબ સર્ચ, વોટ્સએપ મેસેજ, કોલ કે ફ્લેશલાઇટ માટે કહી શકો છો.", "gu");
+        }
+    </script>
 </body>
 </html>
