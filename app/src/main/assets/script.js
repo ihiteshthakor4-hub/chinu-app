@@ -35,9 +35,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Check if user is speaking Hindi
     function isHindi(cmd) {
-        const hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas"];
+        const hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas", "bhejo", "chalao"];
         return hindiWords.some(w => cmd.includes(w));
     }
 
@@ -66,36 +65,63 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!cmd) return;
         const hi = isHindi(cmd);
 
-        // 1. Flashlight
+        // 1. YouTube Search (e.g., "youtube par arijit singh search kar" or "play song on youtube")
+        if (cmd.includes("youtube") && (cmd.includes("search") || cmd.includes("play") || cmd.includes("chalav") || cmd.includes("chalao") || cmd.includes("par ") || cmd.includes("ma "))) {
+            let q = cmd.replace(/youtube|par|ma|on|search|kar|karo|play|chalav|chalao/g, "").trim();
+            if (q && window.Android && Android.searchYouTube) {
+                if (hi) showReply(`यूट्यूब पर ${q} सर्च कर रही हूँ।`, "hi");
+                else showReply(`યુટ્યુબ પર ${q} સર્ચ કરી રહી છું.`, "gu");
+                Android.searchYouTube(q);
+                return;
+            }
+        }
+
+        // 2. WhatsApp Message (e.g., "whatsapp message hello kem cho")
+        if ((cmd.includes("whatsapp") && (cmd.includes("message") || cmd.includes("msg") || cmd.includes("mokal") || cmd.includes("bhejo"))) || cmd.startsWith("message ") || cmd.startsWith("msg ")) {
+            let msg = rawText.replace(/whatsapp|message|msg|par|ma|mokal|bhejo|send|kar|karo/gi, "").trim();
+            if (msg && window.Android && Android.sendWhatsApp) {
+                if (hi) showReply("व्हाट्सएप खोल रही हूँ, कृपया कॉन्टैक्ट चुनें।", "hi");
+                else showReply("વોટ્સએપ ખોલી રહી છું, કોન્ટેક્ટ સિલેક્ટ કરીને સેન્ડ કરી દો.", "gu");
+                Android.sendWhatsApp(msg);
+                return;
+            }
+        }
+
+        // 3. Call specific number (e.g., "call 9876543210")
+        const phoneMatch = cmd.match(/\d{7,12}/);
+        if ((cmd.includes("call") || cmd.includes("dial") || cmd.includes("phone")) && phoneMatch) {
+            if (window.Android && Android.dialNumber) {
+                if (hi) showReply(`${phoneMatch[0]} पर कॉल लगा रही हूँ।`, "hi");
+                else showReply(`${phoneMatch[0]} પર કોલ લગાવી રહી છું.`, "gu");
+                Android.dialNumber(phoneMatch[0]);
+                return;
+            }
+        }
+
+        // 4. Flashlight
         if (cmd.includes("torch") || cmd.includes("flash") || cmd.includes("light")) {
             if (window.Android && Android.toggleFlashlight) {
                 const isOn = Android.toggleFlashlight();
-                if (hi) {
-                    showReply(isOn ? "फ्लैशलाइट चालू कर दी है।" : "फ्लैशलाइट बंद कर दी है।", "hi");
-                } else {
-                    showReply(isOn ? "ફ્લેશલાઇટ ચાલુ કરી દીધી છે." : "ફ્લેશલાઇટ બંધ કરી દીધી છે.", "gu");
-                }
+                if (hi) showReply(isOn ? "फ्लैशलाइट चालू कर दी है।" : "फ्लैशलाइट बंद कर दी है।", "hi");
+                else showReply(isOn ? "ફ્લેશલાઇટ ચાલુ કરી દીધી છે." : "ફ્લેશલાઇટ બંધ કરી દીધી છે.", "gu");
             }
             return;
         }
 
-        // 2. Open Apps
+        // 5. Open Apps
         const apps = ["whatsapp", "youtube", "instagram", "insta", "camera", "settings", "setting", "chrome", "phone", "call", "dialer"];
         for (const app of apps) {
             if (cmd.includes(app) && (cmd.includes("open") || cmd.includes("khol") || cmd.includes("chalu") || cmd.includes("start") || cmd === app)) {
                 if (window.Android && Android.openApp) {
                     const ok = Android.openApp(app);
-                    if (hi) {
-                        showReply(ok ? `${app} खोल रही हूँ।` : `आपके फोन में ${app} नहीं मिला।`, "hi");
-                    } else {
-                        showReply(ok ? `${app} ખોલી રહી છું.` : `તમારા ફોનમાં ${app} મળ્યું નથી.`, "gu");
-                    }
+                    if (hi) showReply(ok ? `${app} खोल रही हूँ।` : `आपके फोन में ${app} नहीं मिला।`, "hi");
+                    else showReply(ok ? `${app} ખોલી રહી છું.` : `તમારા ફોનમાં ${app} મળ્યું નથી.`, "gu");
                 }
                 return;
             }
         }
 
-        // 3. Time & Date
+        // 6. Time & Date
         if (cmd.includes("time") || cmd.includes("samay") || cmd.includes("vagya") || cmd.includes("baje")) {
             const t = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
             if (hi) showReply(`अभी ${t} बजे हैं।`, "hi");
@@ -109,9 +135,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 4. Google Search (Only when asked)
+        // 7. Google Search
         if (cmd.startsWith("search ") || cmd.includes("google par search") || cmd.includes("google search")) {
-            const q = cmd.replace("google par search", "").replace("google search", "").replace("search", "").trim();
+            const q = cmd.replace(/google par search|google search|search/g, "").trim();
             if (q && window.Android && Android.searchGoogle) {
                 if (hi) showReply(`गूगल पर ${q} सर्च कर रही हूँ।`, "hi");
                 else showReply(`ગૂગલ પર ${q} સર્ચ કરી રહી છું.`, "gu");
@@ -120,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 5. Chat & Emotions
+        // 8. Chat & Emotions
         if (cmd.includes("hello") || cmd.includes("hi") || cmd.includes("hey") || cmd.includes("namaste") || cmd.includes("kem cho") || cmd.includes("kem chho") || cmd.includes("kaise ho") || cmd.includes("kaisi ho")) {
             if (hi) showReply("नमस्ते! मैं बिल्कुल ठीक हूँ। बताइए, आज आपके लिए क्या करूँ?", "hi");
             else showReply("હેલો! હું એકદમ મજામાં છું. બોલો, આજે તમારા માટે શું કામ કરું?", "gu");
@@ -152,11 +178,11 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 6. Default Offline Reply
+        // 9. Default Offline Reply
         if (hi) {
-            showReply("मैंने आपकी बात सुनी। आप मुझसे फ्लैशलाइट, समय, व्हाट्सएप, यूट्यूब या कैमरा खोलने के लिए कह सकते हैं।", "hi");
+            showReply("मैंने आपकी बात सुनी। आप यूट्यूब सर्च, व्हाट्सएप मैसेज, कॉल या फ्लैशलाइट के लिए कह सकते हैं।", "hi");
         } else {
-            showReply("મેં તમારી વાત સાંભળી. તમે મને ફ્લેશલાઇટ, સમય, વોટ્સએપ, યુટ્યુબ કે કેમેરા ખોલવા કહી શકો છો.", "gu");
+            showReply("મેં તમારી વાત સાંભળી. તમે યુટ્યુબ સર્ચ, વોટ્સએપ મેસેજ, કોલ કે ફ્લેશલાઇટ માટે કહી શકો છો.", "gu");
         }
     }
 
@@ -176,3 +202,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+        // 0. Hey Chinu + Siri Glow Animation
+        if (cmd.includes("hey chinu") || cmd === "chinu" || cmd.includes("hi chinu")) {
+            if (orb) {
+                orb.classList.add("siri-glow");
+                setTimeout(() => orb.classList.remove("siri-glow"), 4000);
+            }
+            if (hi) showReply("जी बोलिए, मैं सुन रही हूँ। क्या काम है?", "hi");
+            else showReply("હા બોલો, હું સાંભળી રહી છું. શું કામ છે?", "gu");
+            return;
+        }
