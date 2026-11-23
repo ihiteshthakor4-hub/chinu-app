@@ -1,345 +1,168 @@
-// ===== CHINU OS v2.1 - Native Android Voice + Mic + Jarvis Core =====
+document.addEventListener("DOMContentLoaded", () => {
+    const orb = document.querySelector("#orb, .orb, .orb-container");
+    const micBtn = document.querySelector("#mic-btn, #micBtn, .mic-btn");
+    const sendBtn = document.querySelector("#send-btn, #sendBtn, .send-btn");
+    const flashBtn = document.querySelector("#flash-btn, #flashBtn, .flash-btn");
+    const input = document.querySelector("#user-input, #userInput, input[type='text']");
+    const chatBox = document.querySelector("#chat-box, #chatBox, .chat-box, #output");
+    const statusText = document.querySelector("#status, .status-text, #orb-status");
 
-const orbBtn = document.getElementById("orb-btn");
-const micBtn = document.getElementById("mic-btn");
-const sendBtn = document.getElementById("send-btn");
-const flashBtn = document.getElementById("flash-btn");
-const textInput = document.getElementById("text-input");
-const chatLog = document.getElementById("chat-log");
-const statusText = document.getElementById("status-text");
-const liveTime = document.getElementById("live-time");
-const liveDate = document.getElementById("live-date");
-const batteryVal = document.getElementById("battery-val");
-const netVal = document.getElementById("net-val");
-
-const settingsBtn = document.getElementById("settings-btn");
-const settingsModal = document.getElementById("settings-modal");
-const apiKeyInput = document.getElementById("api-key-input");
-const saveSettings = document.getElementById("save-settings");
-const closeSettings = document.getElementById("close-settings");
-
-let isFlashOn = false;
-let geminiApiKey = localStorage.getItem("chinu_api_key") || "";
-
-// ===== 1. LIVE CLOCK & DATE =====
-function updateClock() {
-  const now = new Date();
-  liveTime.textContent = now.toLocaleTimeString("en-IN", { hour12: false });
-  liveDate.textContent = now.toLocaleDateString("en-IN", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).toUpperCase();
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ===== 2. BATTERY & NETWORK STATUS =====
-if (navigator.getBattery) {
-  navigator.getBattery().then((battery) => {
-    const updateBat = () => {
-      batteryVal.textContent = Math.round(battery.level * 100) + "%";
-    };
-    updateBat();
-    battery.addEventListener("levelchange", updateBat);
-  }).catch(() => {});
-}
-
-function updateNetwork() {
-  netVal.textContent = navigator.onLine ? "ONLINE" : "OFFLINE";
-  netVal.style.color = navigator.onLine ? "#4dff88" : "#ff4d5e";
-}
-window.addEventListener("online", updateNetwork);
-window.addEventListener("offline", updateNetwork);
-updateNetwork();
-
-// ===== 3. NATIVE ANDROID FEMALE VOICE ENGINE =====
-function speak(text) {
-  if (!text) return;
-
-  orbBtn.classList.add("speaking");
-  statusText.textContent = "CHINU IS SPEAKING...";
-
-  // Use Android Native TTS first
-  if (window.ChinuNative && typeof window.ChinuNative.speak === "function") {
-    window.ChinuNative.speak(text);
-    const estMs = Math.max(1800, text.length * 75);
-    setTimeout(() => {
-      orbBtn.classList.remove("speaking");
-      statusText.textContent = "TAP ORB TO SPEAK";
-    }, estMs);
-    return;
-  }
-
-  // Browser fallback
-  if ("speechSynthesis" in window) {
-    try {
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = "en-IN";
-      utter.pitch = 1.05;
-      utter.rate = 0.98;
-      utter.onend = () => {
-        orbBtn.classList.remove("speaking");
-        statusText.textContent = "TAP ORB TO SPEAK";
-      };
-      window.speechSynthesis.speak(utter);
-      return;
-    } catch (e) {}
-  }
-
-  orbBtn.classList.remove("speaking");
-  statusText.textContent = "TAP ORB TO SPEAK";
-}
-
-// ===== 4. CHAT LOG HELPER =====
-function addMessage(sender, text) {
-  const div = document.createElement("div");
-  div.className = `msg ${sender}`;
-  div.innerHTML = `<b>${sender === "ai" ? "CHINU" : "YOU"}:</b> ${text}`;
-  chatLog.appendChild(div);
-  chatLog.scrollTop = chatLog.scrollHeight;
-}
-
-// ===== 5. FLASHLIGHT CONTROL =====
-function toggleFlashlight(state) {
-  isFlashOn = typeof state === "boolean" ? state : !isFlashOn;
-  if (window.ChinuNative && typeof window.ChinuNative.setFlashlight === "function") {
-    return window.ChinuNative.setFlashlight(isFlashOn);
-  }
-  return false;
-}
-
-flashBtn.addEventListener("click", () => {
-  const ok = toggleFlashlight();
-  const reply = ok
-    ? (isFlashOn ? "Flashlight on kar di hai." : "Flashlight band kar di hai.")
-    : "Flashlight sirf CHINU APK app mein kaam karegi.";
-  addMessage("ai", reply);
-  speak(reply);
-});
-
-// ===== 6. JARVIS COMMAND PROCESSOR =====
-async function handleCommand(rawCmd) {
-  const cmd = (rawCmd || "").trim();
-  if (!cmd) return;
-
-  addMessage("user", cmd);
-  const lower = cmd.toLowerCase();
-
-  // --- Flashlight ---
-  if (lower.includes("flashlight on") || lower.includes("torch on") || lower.includes("light chalu") || lower.includes("flash on")) {
-    toggleFlashlight(true);
-    const reply = "Done, flashlight on kar di hai.";
-    addMessage("ai", reply);
-    speak(reply);
-    return;
-  }
-  if (lower.includes("flashlight off") || lower.includes("torch off") || lower.includes("light band") || lower.includes("flash off")) {
-    toggleFlashlight(false);
-    const reply = "Okay, flashlight off kar di hai.";
-    addMessage("ai", reply);
-    speak(reply);
-    return;
-  }
-
-  // --- Identity & Greetings ---
-  if (lower.includes("who are you") || lower.includes("tum kaun ho") || lower.includes("tamaru naam") || lower.includes("your name")) {
-    const reply = "Main CHINU hoon, aapki personal AI assistant. Aap mujhe kuch bhi pooch sakte hain.";
-    addMessage("ai", reply);
-    speak(reply);
-    return;
-  }
-  if (lower === "hi" || lower === "hello" || lower === "hey chinu" || lower === "chinu") {
-    const reply = "Hello! Main sun rahi hoon, bataiye kya kaam karna hai?";
-    addMessage("ai", reply);
-    speak(reply);
-    return;
-  }
-
-  // --- Time & Date ---
-  if (lower.includes("time") || lower.includes("samay") || lower.includes("kitne baje")) {
-    const t = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
-    const reply = `Abhi ${t} baje hain.`;
-    addMessage("ai", reply);
-    speak(reply);
-    return;
-  }
-  if (lower.includes("date") || lower.includes("tarikh") || lower.includes("aaj kya din")) {
-    const d = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    const reply = `Aaj ${d} hai.`;
-    addMessage("ai", reply);
-    speak(reply);
-    return;
-  }
-
-  // --- Battery ---
-  if (lower.includes("battery")) {
-    const reply = `Aapke phone ki battery abhi ${batteryVal.textContent} hai.`;
-    addMessage("ai", reply);
-    speak(reply);
-    return;
-  }
-
-  // --- YouTube Play / Open ---
-  if (lower.startsWith("play ") || lower.includes("youtube par")) {
-    const query = lower.replace("play ", "").replace("youtube par", "").trim();
-    const reply = `YouTube par ${query} play kar rahi hoon.`;
-    addMessage("ai", reply);
-    speak(reply);
-    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, "_blank");
-    return;
-  }
-  if (lower.includes("open youtube")) {
-    const reply = "YouTube khol rahi hoon.";
-    addMessage("ai", reply);
-    speak(reply);
-    window.open("https://www.youtube.com", "_blank");
-    return;
-  }
-
-  // --- Open Apps / Websites ---
-  if (lower.includes("open whatsapp")) {
-    const reply = "WhatsApp khol rahi hoon.";
-    addMessage("ai", reply);
-    speak(reply);
-    window.open("https://wa.me/", "_blank");
-    return;
-  }
-  if (lower.includes("open instagram")) {
-    const reply = "Instagram khol rahi hoon.";
-    addMessage("ai", reply);
-    speak(reply);
-    window.open("https://www.instagram.com", "_blank");
-    return;
-  }
-  if (lower.startsWith("search ") || lower.startsWith("google ")) {
-    const q = lower.replace("search ", "").replace("google ", "").trim();
-    const reply = `Google par ${q} search kar rahi hoon.`;
-    addMessage("ai", reply);
-    speak(reply);
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, "_blank");
-    return;
-  }
-
-  // --- Simple Calculator ---
-  if (/^[\d\s+\-*/().]+$/.test(lower)) {
-    try {
-      const result = Function(`"use strict"; return (${lower})`)();
-      const reply = `Iska answer ${result} hai.`;
-      addMessage("ai", reply);
-      speak(reply);
-      return;
-    } catch (e) {}
-  }
-
-  // --- Online Smart AI (Gemini API if configured) ---
-  if (geminiApiKey && navigator.onLine) {
-    statusText.textContent = "THINKING...";
-    try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `You are CHINU, a smart, warm, 22-year-old female AI assistant like Jarvis. Reply briefly in 1-2 natural sentences in the same language (Hinglish/Gujarati/English) as the user. User said: ${cmd}`
-              }]
-            }]
-          })
-        }
-      );
-      const data = await res.json();
-      const aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (aiReply) {
-        const cleanReply = aiReply.replace(/\*/g, "").trim();
-        addMessage("ai", cleanReply);
-        speak(cleanReply);
-        return;
-      }
-    } catch (err) {
-      console.error(err);
+    // Clock & Date Update
+    function updateClock() {
+        const now = new Date();
+        const timeEl = document.querySelector("#time, #clock, .time");
+        const dateEl = document.querySelector("#date, .date");
+        if (timeEl) timeEl.textContent = now.toTimeString().split(" ")[0];
+        if (dateEl) dateEl.textContent = now.toDateString().toUpperCase();
     }
-  }
+    setInterval(updateClock, 1000);
+    updateClock();
 
-  // --- Smart Fallback (Google Search) ---
-  const fallback = `Google par "${cmd}" search kar rahi hoon.`;
-  addMessage("ai", fallback);
-  speak(fallback);
-  window.open(`https://www.google.com/search?q=${encodeURIComponent(cmd)}`, "_blank");
-}
+    // Battery Update
+    if (navigator.getBattery) {
+        navigator.getBattery().then(b => {
+            const batEl = document.querySelector("#battery, #battery-level, .battery");
+            const updateBat = () => { if (batEl) batEl.textContent = Math.round(b.level * 100) + "%"; };
+            updateBat();
+            b.addEventListener("levelchange", updateBat);
+        });
+    }
 
-// ===== 7. NATIVE VOICE RECOGNITION (SPEECH TO TEXT) =====
-window.onNativeSpeechResult = function (spokenText) {
-  orbBtn.classList.remove("listening");
-  statusText.textContent = "TAP ORB TO SPEAK";
-  if (spokenText) {
-    handleCommand(spokenText);
-  }
-};
+    function showReply(text) {
+        if (chatBox) {
+            chatBox.innerHTML = `<div class="msg chinu"><b>CHINU:</b> ${text}</div>`;
+        }
+        if (window.Android && Android.speak) {
+            Android.speak(text);
+        } else if ("speechSynthesis" in window) {
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = "en-IN";
+            window.speechSynthesis.speak(u);
+        }
+    }
 
-function startListening() {
-  if (window.ChinuNative && typeof window.ChinuNative.startListening === "function") {
-    orbBtn.classList.add("listening");
-    statusText.textContent = "LISTENING...";
-    window.ChinuNative.startListening();
-    return;
-  }
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (SpeechRecognition) {
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-IN";
-    recognition.onstart = () => {
-      orbBtn.classList.add("listening");
-      statusText.textContent = "LISTENING...";
+    // Listening UI Callbacks from Android
+    window.onListeningStart = () => {
+        if (statusText) statusText.textContent = "LISTENING...";
+        if (orb) orb.classList.add("listening");
     };
-    recognition.onresult = (e) => handleCommand(e.results[0][0].transcript);
-    recognition.onend = () => {
-      orbBtn.classList.remove("listening");
-      statusText.textContent = "TAP ORB TO SPEAK";
+
+    window.onListeningEnd = () => {
+        if (statusText) statusText.textContent = "TAP ORB TO SPEAK";
+        if (orb) orb.classList.remove("listening");
     };
-    recognition.start();
-  } else {
-    const msg = "Mic start nahi ho paya, kripya type karein.";
-    addMessage("ai", msg);
-    speak(msg);
-  }
-}
 
-orbBtn.addEventListener("click", startListening);
-micBtn.addEventListener("click", startListening);
+    window.onVoiceResult = (spokenText) => {
+        handleCommand(spokenText);
+    };
 
-// ===== 8. TEXT INPUT & SETTINGS =====
-sendBtn.addEventListener("click", () => {
-  handleCommand(textInput.value);
-  textInput.value = "";
-});
+    function startVoice() {
+        if (window.Android && Android.startListening) {
+            Android.startListening();
+        } else {
+            showReply("Voice recognition is ready on the Android app.");
+        }
+    }
 
-textInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") {
-    handleCommand(textInput.value);
-    textInput.value = "";
-  }
-});
+    function handleCommand(rawText) {
+        const cmd = rawText.trim().toLowerCase();
+        if (!cmd) return;
 
-settingsBtn.addEventListener("click", () => {
-  apiKeyInput.value = geminiApiKey;
-  settingsModal.classList.remove("hidden");
-});
+        // 1. Flashlight / Torch
+        if (cmd.includes("torch") || cmd.includes("flash") || cmd.includes("light")) {
+            if (window.Android && Android.toggleFlashlight) {
+                const isOn = Android.toggleFlashlight();
+                showReply(isOn ? "Flashlight chalu kari didhi chhe." : "Flashlight bandh kari didhi chhe.");
+            } else {
+                showReply("Flashlight toggle thai gai chhe.");
+            }
+            return;
+        }
 
-closeSettings.addEventListener("click", () => {
-  settingsModal.classList.add("hidden");
-});
+        // 2. Open Apps (WhatsApp, YouTube, Camera, Instagram, Settings, Phone, Chrome)
+        const apps = ["whatsapp", "youtube", "instagram", "insta", "camera", "settings", "setting", "chrome", "phone", "call", "dialer"];
+        for (const app of apps) {
+            if (cmd.includes(app) && (cmd.includes("open") || cmd.includes("khol") || cmd.includes("chalu") || cmd.includes("start") || cmd === app)) {
+                if (window.Android && Android.openApp) {
+                    const ok = Android.openApp(app);
+                    showReply(ok ? `${app} kholi rahyu chhu.` : `Tamara phone ma ${app} nathi malyu.`);
+                }
+                return;
+            }
+        }
 
-saveSettings.addEventListener("click", () => {
-  geminiApiKey = apiKeyInput.value.trim();
-  localStorage.setItem("chinu_api_key", geminiApiKey);
-  settingsModal.classList.add("hidden");
-  const msg = "Settings save ho gayi hain.";
-  addMessage("ai", msg);
-  speak(msg);
+        // 3. Time & Date
+        if (cmd.includes("time") || cmd.includes("samay") || cmd.includes("ketla vagya")) {
+            const t = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+            showReply(`Atyare ${t} vagya chhe.`);
+            return;
+        }
+        if (cmd.includes("date") || cmd.includes("tarikh") || cmd.includes("aaje kayo var")) {
+            const d = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
+            showReply(`Aaje ${d} chhe.`);
+            return;
+        }
+
+        // 4. Explicit Google Search ONLY when asked
+        if (cmd.startsWith("search ") || cmd.includes("google par search") || cmd.includes("google search")) {
+            const q = cmd.replace("google par search", "").replace("google search", "").replace("search", "").trim();
+            if (q && window.Android && Android.searchGoogle) {
+                showReply(`Google par ${q} search karu chhu.`);
+                Android.searchGoogle(q);
+            } else {
+                showReply("Su search karvu chhe e to kaho!");
+            }
+            return;
+        }
+
+        // 5. Offline Friendly & Empathetic Conversation
+        if (cmd.includes("hello") || cmd.includes("hi") || cmd.includes("hey") || cmd.includes("namaste") || cmd.includes("kem cho") || cmd.includes("kem chho")) {
+            showReply("Hello! Hu ekdam majama chhu. Bolo, aaje tamara mate su kam karu?");
+            return;
+        }
+        if (cmd.includes("good morning")) {
+            showReply("Good morning! Aajno divas tamaro khub saras jay.");
+            return;
+        }
+        if (cmd.includes("good night")) {
+            showReply("Good night! Aaram karo, kale pacha malishu.");
+            return;
+        }
+        if (cmd.includes("taru naam") || cmd.includes("your name") || cmd.includes("who are you") || cmd.includes("tu kon")) {
+            showReply("Maru naam CHINU chhe. Hu tamari personal AI assistant chhu.");
+            return;
+        }
+        if (cmd.includes("sad") || cmd.includes("mood kharab") || cmd.includes("tension") || cmd.includes("thaki gayo") || cmd.includes("stress")) {
+            showReply("Chinta na karo, hu tamari sathe j chhu. Thodo aaram kari lo, badhu barobar thai jase.");
+            return;
+        }
+        if (cmd.includes("thank") || cmd.includes("shukriya") || cmd.includes("aabhar")) {
+            showReply("Welcome! Tamari madad karine mane hamesha khushi thay chhe.");
+            return;
+        }
+        if (cmd.includes("joke") || cmd.includes("hasav")) {
+            showReply("Ek vaar mobile ne charge par mukyo, pan switch on karvanu bhuli gaya... pachi khabar padi ke jindagi ma pan ghani vaar aavu j thay chhe!");
+            return;
+        }
+
+        // 6. Default Offline Reply (No random Google Search!)
+        showReply(`Me tamari vaat sambhali: "${rawText}". Tame mane flashlight, time, WhatsApp, YouTube ke Camera kholva kahi shako chho — athva Google mate "search" boline kaho.`);
+    }
+
+    // Button Event Listeners
+    if (orb) orb.addEventListener("click", startVoice);
+    if (micBtn) micBtn.addEventListener("click", startVoice);
+    if (flashBtn) flashBtn.addEventListener("click", () => handleCommand("flashlight"));
+    if (sendBtn && input) {
+        sendBtn.addEventListener("click", () => {
+            handleCommand(input.value);
+            input.value = "";
+        });
+        input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                handleCommand(input.value);
+                input.value = "";
+            }
+        });
+    }
 });
