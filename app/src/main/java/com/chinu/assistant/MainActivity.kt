@@ -193,6 +193,36 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 startActivity(intent)
             } catch (_: Exception) {}
         }
+
+        @JavascriptInterface
+        fun searchYouTube(query: String) {
+            try {
+                val uri = Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(query))
+                val intent = Intent(Intent.ACTION_VIEW, uri)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+            } catch (_: Exception) {}
+        }
+
+        @JavascriptInterface
+        fun sendWhatsApp(message: String) {
+            try {
+                val uri = Uri.parse("https://wa.me/?text=" + Uri.encode(message))
+                val intent = Intent(Intent.ACTION_VIEW, uri)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+            } catch (_: Exception) {}
+        }
+
+        @JavascriptInterface
+        fun dialNumber(number: String) {
+            try {
+                val cleanNum = number.replace("[^0-9+]".toRegex(), "")
+                val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$cleanNum"))
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+            } catch (_: Exception) {}
+        }
     }
 
     override fun onDestroy() {
