@@ -163,22 +163,40 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         @JavascriptInterface
         fun openApp(appName: String): Boolean {
             return try {
-                val name = appName.lowercase(Locale.getDefault())
-                val intent: Intent? = when {
-                    name.contains("whatsapp") -> packageManager.getLaunchIntentForPackage("com.whatsapp")
-                    name.contains("youtube") -> packageManager.getLaunchIntentForPackage("com.google.android.youtube")
-                    name.contains("instagram") || name.contains("insta") -> packageManager.getLaunchIntentForPackage("com.instagram.android")
-                    name.contains("chrome") -> packageManager.getLaunchIntentForPackage("com.android.chrome")
-                    name.contains("camera") -> Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-                    name.contains("settings") || name.contains("setting") -> Intent(Settings.ACTION_SETTINGS)
-                    name.contains("call") || name.contains("phone") || name.contains("dialer") -> Intent(Intent.ACTION_DIAL)
+                val query = appName.lowercase(Locale.getDefault()).trim()
+                val directIntent: Intent? = when {
+                    query.contains("camera") -> Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                    query.contains("settings") || query.contains("setting") -> Intent(Settings.ACTION_SETTINGS)
+                    query.contains("dialer") || query == "phone" || query == "call" -> Intent(Intent.ACTION_DIAL)
+                    query.contains("whatsapp") -> packageManager.getLaunchIntentForPackage("com.whatsapp")
+                    query.contains("youtube") -> packageManager.getLaunchIntentForPackage("com.google.android.youtube")
+                    query.contains("instagram") || query.contains("insta") -> packageManager.getLaunchIntentForPackage("com.instagram.android")
+                    query.contains("chrome") -> packageManager.getLaunchIntentForPackage("com.android.chrome")
                     else -> null
                 }
-                if (intent != null) {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    startActivity(intent)
-                    true
-                } else false
+                if (directIntent != null) {
+                    directIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(directIntent)
+                    return true
+                }
+
+                // Phone ni koi pan installed app sodhi ne kholse
+                val mainIntent = Intent(Intent.ACTION_MAIN, null)
+                mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+                val apps = packageManager.queryIntentActivities(mainIntent, 0)
+                for (resolveInfo in apps) {
+                    val label = resolveInfo.loadLabel(packageManager).toString().lowercase(Locale.getDefault())
+                    val pkg = resolveInfo.activityInfo.packageName
+                    if (label.contains(query) || query.contains(label)) {
+                        val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
+                        if (launchIntent != null) {
+                            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(launchIntent)
+                            return true
+                        }
+                    }
+                }
+                false
             } catch (e: Exception) {
                 false
             }
@@ -219,6 +237,43 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             try {
                 val cleanNum = number.replace("[^0-9+]".toRegex(), "")
                 val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$cleanNum"))
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+            } catch (_: Exception) {}
+        }
+
+        @JavascriptInterface
+        fun scrollDown(): Boolean {
+            val service = ChinuAccessibilityService.instance ?: return false
+            service.scrollDown()
+            return true
+        }
+
+        @JavascriptInterface
+        fun scrollUp(): Boolean {
+            val service = ChinuAccessibilityService.instance ?: return false
+            service.scrollUp()
+            return true
+        }
+
+        @JavascriptInterface
+        fun goBack(): Boolean {
+            val service = ChinuAccessibilityService.instance ?: return false
+            service.performBack()
+            return true
+        }
+
+        @JavascriptInterface
+        fun goHome(): Boolean {
+            val service = ChinuAccessibilityService.instance ?: return false
+            service.performHome()
+            return true
+        }
+
+        @JavascriptInterface
+        fun openAccessibilitySettings() {
+            try {
+                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)
             } catch (_: Exception) {}
