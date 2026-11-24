@@ -59,6 +59,15 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
         webView.loadUrl("file:///android_asset/index.html")
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        if (intent?.getBooleanExtra("wake_triggered", false) == true) {
+            runOnUiThread {
+                webView.evaluateJavascript("if(window.onVoiceResult) window.onVoiceResult('hey chinu');", null)
+            }
+        }
+    }
+
     private fun requestPermissionsIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val perms = arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA)
@@ -129,6 +138,30 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     inner class ChinuBridge {
         @JavascriptInterface
+        fun setWakeWordMode(enabled: Boolean) {
+            runOnUiThread {
+                if (enabled) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this@MainActivity)) {
+                        val permIntent = Intent(
+                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:$packageName")
+                        )
+                        startActivity(permIntent)
+                        return@runOnUiThread
+                    }
+                    val serviceIntent = Intent(this@MainActivity, ChinuWakeService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(serviceIntent)
+                    } else {
+                        startService(serviceIntent)
+                    }
+                } else {
+                    stopService(Intent(this@MainActivity, ChinuWakeService::class.java))
+                }
+            }
+        }
+
+        @JavascriptInterface
         fun startListening() {
             runOnUiThread {
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -180,7 +213,6 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                     return true
                 }
 
-                // Phone ni koi pan installed app sodhi ne kholse
                 val mainIntent = Intent(Intent.ACTION_MAIN, null)
                 mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
                 val apps = packageManager.queryIntentActivities(mainIntent, 0)
