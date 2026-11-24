@@ -5,6 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>CHINU OS v2.0</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .settings-btn {
+            background: rgba(255, 42, 85, 0.2);
+            border: 1px solid rgba(255, 42, 85, 0.5);
+            color: #fff;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+        .modal-box {
+            width: 88%;
+            max-width: 360px;
+            background: #12060a;
+            border: 1px solid #ff2a55;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+        .modal-box h3 { color: #ff2a55; margin-bottom: 10px; }
+        .modal-box p { font-size: 12px; color: #ccc; margin-bottom: 12px; }
+        .modal-box input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ff2a55;
+            background: #000;
+            color: #fff;
+            margin-bottom: 12px;
+            outline: none;
+        }
+        .modal-btns { display: flex; gap: 10px; justify-content: center; }
+        .modal-btns button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-save { background: #ff2a55; color: #fff; }
+        .btn-close { background: #333; color: #fff; }
+        .btn-clear { background: #441122; color: #ff88a0; margin-top: 10px; width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ff2a55; }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -13,6 +67,7 @@
             <div class="brand">
                 <span class="dot"></span>
                 <span>CHINU OS <small>v2.0</small></span>
+                <button class="settings-btn" onclick="openSettings()">⚙️</button>
             </div>
             <div class="clock-box">
                 <div id="time">00:00:00</div>
@@ -27,8 +82,8 @@
                 <div id="battery" class="val">--%</div>
             </div>
             <div class="card">
-                <div class="label">NETWORK</div>
-                <div class="val green">ONLINE</div>
+                <div class="label">AI BRAIN</div>
+                <div id="ai-status" class="val green">READY</div>
             </div>
             <div class="card">
                 <div class="label">VOICE CORE</div>
@@ -46,7 +101,7 @@
 
         <!-- Chat Output -->
         <div id="chat-box" class="chat-box">
-            <div class="msg chinu"><b>CHINU:</b> Hello! હું ચીનુ છું. બોલો, આજે શું કામ કરું?</div>
+            <div class="msg chinu"><b>CHINU:</b> Hello! હું ચીનુ છું. બોલો, આજે શું વાત કરીએ?</div>
         </div>
 
         <!-- Bottom Controls -->
@@ -58,7 +113,27 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-box">
+            <h3>CHINU AI SETTINGS</h3>
+            <p>Smart AI vaat-chit mate tamari Free Gemini API Key paste karo:</p>
+            <input id="api-key-input" type="text" placeholder="Paste Gemini API Key here...">
+            <div class="modal-btns">
+                <button class="btn-save" onclick="saveApiKey()">SAVE</button>
+                <button class="btn-close" onclick="closeSettings()">CLOSE</button>
+            </div>
+            <button class="btn-clear" onclick="clearHistory()">🗑️ CLEAR CHAT HISTORY</button>
+        </div>
+    </div>
+
     <script>
+        var chatHistory = [];
+        try {
+            var saved = localStorage.getItem("chinu_history");
+            if (saved) chatHistory = JSON.parse(saved);
+        } catch (e) { chatHistory = []; }
+
         function updateClock() {
             var now = new Date();
             var timeEl = document.getElementById("time");
@@ -78,6 +153,34 @@
             });
         }
 
+        function openSettings() {
+            var modal = document.getElementById("settings-modal");
+            var inp = document.getElementById("api-key-input");
+            if (inp) inp.value = localStorage.getItem("chinu_api_key") || "";
+            if (modal) modal.style.display = "flex";
+        }
+
+        function closeSettings() {
+            var modal = document.getElementById("settings-modal");
+            if (modal) modal.style.display = "none";
+        }
+
+        function saveApiKey() {
+            var inp = document.getElementById("api-key-input");
+            if (inp) {
+                localStorage.setItem("chinu_api_key", inp.value.trim());
+                closeSettings();
+                showReply("API Key સેવ થઈ ગઈ છે! હવે આપણે કોઈ પણ વિષય પર વાત કરી શકીએ છીએ.", "gu");
+            }
+        }
+
+        function clearHistory() {
+            chatHistory = [];
+            localStorage.removeItem("chinu_history");
+            closeSettings();
+            showReply("જૂની ચેટ હિસ્ટ્રી ક્લીયર કરી દીધી છે.", "gu");
+        }
+
         function showReply(text, lang) {
             lang = lang || "gu";
             var chatBox = document.getElementById("chat-box");
@@ -90,7 +193,7 @@
         }
 
         function isHindi(cmd) {
-            var hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas", "bhejo", "chalao"];
+            var hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas", "bhejo", "chalao", "kyun", "kahan", "mujhe"];
             for (var i = 0; i < hindiWords.length; i++) {
                 if (cmd.indexOf(hindiWords[i]) !== -1) return true;
             }
@@ -131,6 +234,61 @@
             }
         }
 
+        function askGeminiAI(userText, hi) {
+            var apiKey = localStorage.getItem("chinu_api_key");
+            if (!apiKey) {
+                if (hi) showReply("मुझसे स्मार्ट बात करने के लिए ऊपर सेटिंग्स बटन दबाकर फ्री जेमिनी एपीआई की डालें।", "hi");
+                else showReply("મારી સાથે સ્માર્ટ વાત કરવા માટે ઉપર સેટિંગ્સ બટન દબાવીને ફ્રી જેમિની એપીઆઈ કી નાખો.", "gu");
+                return;
+            }
+
+            var st = document.getElementById("status");
+            var orb = document.getElementById("orb");
+            if (st) st.textContent = "THINKING...";
+            if (orb) orb.classList.add("siri-glow");
+
+            chatHistory.push({ role: "user", parts: [{ text: userText }] });
+            if (chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
+
+            var payload = {
+                system_instruction: {
+                    parts: [{
+                        text: "You are CHINU, a warm, caring, witty 22-year-old female personal AI assistant and best friend. Reply in pure Gujarati script if the user speaks Gujarati, or pure Hindi script if the user speaks Hindi. Keep answers short (1 to 3 sentences), natural, and emotional like a real human friend so they sound great when spoken aloud. Never use asterisks, emojis, or markdown."
+                    }]
+                },
+                contents: chatHistory
+            };
+
+            fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + apiKey, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (st) st.textContent = "TAP ORB TO SPEAK";
+                if (orb) orb.classList.remove("siri-glow");
+
+                if (data && data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    var reply = data.candidates[0].content.parts[0].text.replace(/\*/g, "").trim();
+                    chatHistory.push({ role: "model", parts: [{ text: reply }] });
+                    try { localStorage.setItem("chinu_history", JSON.stringify(chatHistory)); } catch (e) {}
+
+                    var isReplyHindi = /[\u0900-\u097F]/.test(reply);
+                    showReply(reply, isReplyHindi ? "hi" : "gu");
+                } else {
+                    if (hi) showReply("माफ कीजिए, अभी जवाब नहीं मिल पाया। अपनी एपीआई की चेक करें।", "hi");
+                    else showReply("માફ કરજો, અત્યારે જવાબ નથી મળી શક્યો. તમારી એપીઆઈ કી ચેક કરો.", "gu");
+                }
+            })
+            .catch(function() {
+                if (st) st.textContent = "TAP ORB TO SPEAK";
+                if (orb) orb.classList.remove("siri-glow");
+                if (hi) showReply("इंटरनेट कनेक्शन नहीं है। अभी आप ऑफलाइन कमांड्स इस्तेमाल कर सकते हैं।", "hi");
+                else showReply("ઇન્ટરનેટ ચાલુ નથી. અત્યારે તમે ઓફલાઇન કમાન્ડ્સ વાપરી શકો છો.", "gu");
+            });
+        }
+
         function handleCommand(rawText) {
             var cmd = rawText.trim().toLowerCase();
             if (!cmd) return;
@@ -138,10 +296,10 @@
             var orb = document.getElementById("orb");
 
             // 0. Hey Chinu + Siri Glow
-            if (cmd.indexOf("hey chinu") !== -1 || cmd === "chinu" || cmd.indexOf("hi chinu") !== -1) {
+            if (cmd === "hey chinu" || cmd === "chinu" || cmd === "hi chinu") {
                 if (orb) {
                     orb.classList.add("siri-glow");
-                    setTimeout(function() { orb.classList.remove("siri-glow"); }, 4000);
+                    setTimeout(function() { orb.classList.remove("siri-glow"); }, 3500);
                 }
                 if (hi) showReply("जी बोलिए, मैं सुन रही हूँ। क्या काम है?", "hi");
                 else showReply("હા બોલો, હું સાંભળી રહી છું. શું કામ છે?", "gu");
@@ -230,41 +388,8 @@
                 return;
             }
 
-            // 8. Chat & Emotions
-            if (cmd.indexOf("hello") !== -1 || cmd.indexOf("hi") !== -1 || cmd.indexOf("hey") !== -1 || cmd.indexOf("namaste") !== -1 || cmd.indexOf("kem cho") !== -1 || cmd.indexOf("kem chho") !== -1 || cmd.indexOf("kaise ho") !== -1 || cmd.indexOf("kaisi ho") !== -1) {
-                if (hi) showReply("नमस्ते! मैं बिल्कुल ठीक हूँ। बताइए, आज आपके लिए क्या करूँ?", "hi");
-                else showReply("હેલો! હું એકદમ મજામાં છું. બોલો, આજે તમારા માટે શું કામ કરું?", "gu");
-                return;
-            }
-            if (cmd.indexOf("good morning") !== -1) {
-                if (hi) showReply("गुड मॉर्निंग! आपका दिन बहुत अच्छा जाए।", "hi");
-                else showReply("ગુડ મોર્નિંગ! તમારો આજનો દિવસ ખૂબ સરસ જાય.", "gu");
-                return;
-            }
-            if (cmd.indexOf("good night") !== -1) {
-                if (hi) showReply("गुड नाइट! आराम कीजिए, कल फिर मिलेंगे।", "hi");
-                else showReply("ગુડ નાઇટ! આરામ કરો, કાલે પાછા મળીશું.", "gu");
-                return;
-            }
-            if (cmd.indexOf("naam") !== -1 || cmd.indexOf("name") !== -1 || cmd.indexOf("who are you") !== -1 || cmd.indexOf("kon") !== -1) {
-                if (hi) showReply("मेरा नाम चीनू है। मैं आपकी पर्सनल एआई असिस्टेंट हूँ।", "hi");
-                else showReply("મારું નામ ચીનુ છે. હું તમારી પર્સનલ એઆઈ આસિસ્ટન્ટ છું.", "gu");
-                return;
-            }
-            if (cmd.indexOf("sad") !== -1 || cmd.indexOf("mood kharab") !== -1 || cmd.indexOf("tension") !== -1 || cmd.indexOf("thak") !== -1 || cmd.indexOf("udas") !== -1) {
-                if (hi) showReply("चिंता मत कीजिए, मैं आपके साथ हूँ। थोड़ा आराम कर लीजिए, सब ठीक हो जाएगा।", "hi");
-                else showReply("ચિંતા ના કરો, હું તમારી સાથે જ છું. થોડો આરામ કરી લો, બધું બરાબર થઈ જશે.", "gu");
-                return;
-            }
-            if (cmd.indexOf("thank") !== -1 || cmd.indexOf("shukriya") !== -1 || cmd.indexOf("aabhar") !== -1) {
-                if (hi) showReply("आपका स्वागत है! आपकी मदद करके मुझे हमेशा खुशी होती है।", "hi");
-                else showReply("વેલકમ! તમારી મદદ કરીને મને હંમેશા ખુશી થાય છે.", "gu");
-                return;
-            }
-
-            // 9. Default Reply
-            if (hi) showReply("मैंने आपकी बात सुनी। आप यूट्यूब सर्च, व्हाट्सएप मैसेज, कॉल या फ्लैशलाइट के लिए कह सकते हैं।", "hi");
-            else showReply("મેં તમારી વાત સાંભળી. તમે યુટ્યુબ સર્ચ, વોટ્સએપ મેસેજ, કોલ કે ફ્લેશલાઇટ માટે કહી શકો છો.", "gu");
+            // 8. Smart AI Conversation (Gemini Brain)
+            askGeminiAI(rawText, hi);
         }
     </script>
 </body>
