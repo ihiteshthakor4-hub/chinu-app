@@ -1,3 +1,14 @@
+var wakeActive = false;
+function toggleWakeWord() {
+    wakeActive = !wakeActive;
+    var btn = document.getElementById("wake-btn");
+    var st = document.getElementById("status");
+    if (btn) btn.textContent = wakeActive ? "🎙️ ON" : "🎙️ OFF";
+    if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO SPEAK";
+    if (window.Android && Android.setWakeWordMode) {
+        Android.setWakeWordMode(wakeActive);
+    }
+}
 document.addEventListener("DOMContentLoaded", () => {
     const orb = document.querySelector("#orb, .orb, .orb-container");
     const micBtn = document.querySelector("#mic-btn, #micBtn, .mic-btn");
