@@ -12,9 +12,9 @@
             color: #fff;
             border-radius: 8px;
             padding: 4px 8px;
-            font-size: 16px;
+            font-size: 14px;
             cursor: pointer;
-            margin-left: 8px;
+            margin-left: 6px;
         }
         .chat-box {
             max-height: 185px;
@@ -104,6 +104,7 @@
                 <span class="dot"></span>
                 <span>CHINU OS <small>v3.0</small></span>
                 <button class="settings-btn" onclick="openSettings()">⚙️</button>
+                <button id="wake-btn" class="settings-btn" onclick="toggleWakeWord()">🎙️ OFF</button>
             </div>
             <div class="clock-box">
                 <div id="time">00:00:00</div>
@@ -137,7 +138,7 @@
 
         <!-- Chat Output -->
         <div id="chat-box" class="chat-box">
-            <div class="msg chinu"><b>CHINU:</b> હાય જાન! હું તારી ચીનુ છું. બોલ, આજે શું વાત કરીએ કે કયું કામ કરું?</div>
+            <div class="msg chinu"><b>CHINU:</b> હાય બોસ! હું તમારી ચીનુ છું. બોલો, આજે શું વાત કરીએ કે કયું કામ કરું?</div>
         </div>
 
         <!-- Bottom Controls -->
@@ -166,6 +167,7 @@
 
     <script>
         var lastCodeText = "";
+        var wakeActive = false;
         var chatHistory = [];
         try {
             var saved = localStorage.getItem("chinu_history");
@@ -191,6 +193,17 @@
             });
         }
 
+        function toggleWakeWord() {
+            wakeActive = !wakeActive;
+            var btn = document.getElementById("wake-btn");
+            var st = document.getElementById("status");
+            if (btn) btn.textContent = wakeActive ? "🎙️ ON" : "🎙️ OFF";
+            if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO SPEAK";
+            if (window.Android && Android.setWakeWordMode) {
+                Android.setWakeWordMode(wakeActive);
+            }
+        }
+
         function openSettings() {
             var modal = document.getElementById("settings-modal");
             var inp = document.getElementById("api-key-input");
@@ -208,7 +221,7 @@
             if (inp) {
                 localStorage.setItem("chinu_api_key", inp.value.trim());
                 closeSettings();
-                showReply("API Key સેવ થઈ ગઈ જાન! હવે તું જે કહે એ વાત અને કોડિંગ બધું કરી આપીશ.", "gu");
+                showReply("API Key સેવ થઈ ગઈ બોસ! હવે તમે જે કહેશો એ વાત અને કોડિંગ બધું કરી આપીશ.", "gu");
             }
         }
 
@@ -223,7 +236,7 @@
             chatHistory = [];
             localStorage.removeItem("chinu_history");
             closeSettings();
-            showReply("જૂની ચેટ હિસ્ટ્રી ક્લીયર કરી દીધી છે.", "gu");
+            showReply("જૂની ચેટ હિસ્ટ્રી ક્લીયર કરી દીધી છે બોસ.", "gu");
         }
 
         function copyCode() {
@@ -234,7 +247,7 @@
             ta.select();
             document.execCommand("copy");
             document.body.removeChild(ta);
-            showReply("કોડ કોપી થઈ ગયો છે!", "gu");
+            showReply("કોડ કોપી થઈ ગયો છે બોસ!", "gu");
         }
 
         function showReply(text, lang) {
@@ -249,7 +262,7 @@
         }
 
         function isHindi(cmd) {
-            var hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas", "bhejo", "chalao", "kyun", "kahan", "mujhe", "jaan", "pyar"];
+            var hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas", "bhejo", "chalao", "kyun", "kahan", "mujhe", "boss", "pyar"];
             for (var i = 0; i < hindiWords.length; i++) {
                 if (cmd.indexOf(hindiWords[i]) !== -1) return true;
             }
@@ -266,7 +279,7 @@
         window.onListeningEnd = function() {
             var st = document.getElementById("status");
             var orb = document.getElementById("orb");
-            if (st) st.textContent = "TAP ORB TO SPEAK";
+            if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO SPEAK";
             if (orb) orb.classList.remove("listening");
         };
 
@@ -295,8 +308,8 @@
         function askGeminiAI(userText, hi) {
             var apiKey = localStorage.getItem("chinu_api_key");
             if (!apiKey) {
-                if (hi) showReply("जान, ऊपर सेटिंग्स बटन दबाकर फ्री जेमिनी एपीआई की डाल दो।", "hi");
-                else showReply("જાન, ઉપર સેટિંગ્સ બટન દબાવીને ફ્રી જેમિની એપીઆઈ કી નાખી દે.", "gu");
+                if (hi) showReply("बॉस, ऊपर सेटिंग्स बटन दबाकर फ्री जेमिनी एपीआई की डाल दो।", "hi");
+                else showReply("બોસ, ઉપર સેટિંગ્સ બટન દબાવીને ફ્રી જેમિની એપીઆઈ કી નાખી દો.", "gu");
                 return;
             }
 
@@ -311,7 +324,7 @@
             var payload = {
                 system_instruction: {
                     parts: [{
-                        text: "You are CHINU, the user's loving, caring, playful, and slightly romantic 22-year-old girlfriend and expert programmer. Talk sweetly like a real girlfriend in pure Gujarati script if the user speaks Gujarati, or pure Hindi script if the user speaks Hindi. Keep normal chat short (1 to 3 sentences) and emotional. Never use emojis or asterisks in normal chat. If the user asks for coding, HTML, CSS, JavaScript, Python, Kotlin, or any program, write complete clean working code inside triple backticks."
+                        text: "You are CHINU, the user's loving, caring, playful, and slightly romantic 22-year-old girlfriend and expert programmer. Always address the user affectionately as 'બોસ' (Boss) in Gujarati or 'बॉस' (Boss) in Hindi, and never call them 'jaan'. Talk sweetly in pure Gujarati script if the user speaks Gujarati, or pure Hindi script if the user speaks Hindi. Keep normal chat short (1 to 3 sentences) and emotional. Never use emojis or asterisks in normal chat. If the user asks for coding, HTML, CSS, JavaScript, Python, Kotlin, or any program, write complete clean working code inside triple backticks."
                     }]
                 },
                 contents: chatHistory
@@ -324,7 +337,7 @@
             })
             .then(function(res) { return res.json(); })
             .then(function(data) {
-                if (st) st.textContent = "TAP ORB TO SPEAK";
+                if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO SPEAK";
                 if (orb) orb.classList.remove("siri-glow");
 
                 if (data && data.candidates && data.candidates[0] && data.candidates[0].content) {
@@ -338,24 +351,25 @@
                         lastCodeText = codeMatch[1].trim();
                         var chatBox = document.getElementById("chat-box");
                         if (chatBox) {
-                            chatBox.innerHTML = '<div class="msg chinu"><b>CHINU:</b> આ રહ્યો તારો કોડ:<pre>' + escapeHtml(lastCodeText) + '</pre><button class="copy-btn" onclick="copyCode()">📋 COPY CODE</button></div>';
+                            chatBox.innerHTML = '<div class="msg chinu"><b>CHINU:</b> આ રહ્યો તમારો કોડ બોસ:<pre>' + escapeHtml(lastCodeText) + '</pre><button class="copy-btn" onclick="copyCode()">📋 COPY CODE</button></div>';
                         }
                         if (window.Android && Android.speak) {
-                            Android.speak(isReplyHindi ? "जान, मैंने कोड लिख दिया है। स्क्रीन पर देख लो और कॉपी कर लो।" : "જાન, મેં તારા માટે કોડ લખી દીધો છે. સ્ક્રીન પર જોઈને કોપી કરી લે.", isReplyHindi ? "hi" : "gu");
+                            Android.speak(isReplyHindi ? "बॉस, मैंने कोड लिख दिया है। स्क्रीन पर देख लो और कॉपी कर लो।" : "બોસ, મેં તમારા માટે કોડ લખી દીધો છે. સ્ક્રીન પર જોઈને કોપી કરી લો.", isReplyHindi ? "hi" : "gu");
                         }
                     } else {
                         showReply(reply.replace(/\*/g, ""), isReplyHindi ? "hi" : "gu");
                     }
                 } else {
-                    if (hi) showReply("माफ करना जान, अभी जवाब नहीं मिल पाया। एपीआई की चेक कर लो।", "hi");
-                    else showReply("સોરી જાન, અત્યારે જવાબ ના મળ્યો. એપીઆઈ કી ચેક કરી લે.", "gu");
+                    chatHistory.pop();
+                    var err = (data && data.error && data.error.message) ? data.error.message : JSON.stringify(data);
+                    showReply("API Error: " + err, "en");
                 }
             })
-            .catch(function() {
-                if (st) st.textContent = "TAP ORB TO SPEAK";
+            .catch(function(e) {
+                chatHistory.pop();
+                if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO SPEAK";
                 if (orb) orb.classList.remove("siri-glow");
-                if (hi) showReply("इंटरनेट बंद है जान, अभी ऑफलाइन कमांड्स चलेंगे।", "hi");
-                else showReply("ઇન્ટરનેટ બંધ છે જાન, અત્યારે ઓફલાઇન કમાન્ડ્સ ચાલશે.", "gu");
+                showReply("Network Error: " + e.message, "en");
             });
         }
 
@@ -371,20 +385,20 @@
                     orb.classList.add("siri-glow");
                     setTimeout(function() { orb.classList.remove("siri-glow"); }, 3500);
                 }
-                if (hi) showReply("हाँ जान, बोलो मैं सुन रही हूँ।", "hi");
-                else showReply("હા જાન, બોલ હું સાંભળી રહી છું.", "gu");
+                if (hi) showReply("हाँ बॉस, बोलो मैं सुन रही हूँ।", "hi");
+                else showReply("હા બોસ, બોલો હું સાંભળી રહી છું.", "gu");
                 return;
             }
 
             // 1. Scroll / Back / Home (Accessibility Controls)
             if (cmd.indexOf("scroll down") !== -1 || cmd.indexOf("niche scroll") !== -1 || cmd.indexOf("niche kar") !== -1) {
                 var okDown = window.Android && Android.scrollDown && Android.scrollDown();
-                if (!okDown) showReply("પહેલા સેટિંગ્સમાં જઈને Auto-Scroll પરમિશન ચાલુ કરો.", "gu");
+                if (!okDown) showReply("પહેલા સેટિંગ્સમાં જઈને Auto-Scroll પરમિશન ચાલુ કરો બોસ.", "gu");
                 return;
             }
             if (cmd.indexOf("scroll up") !== -1 || cmd.indexOf("upar scroll") !== -1 || cmd.indexOf("upar kar") !== -1) {
                 var okUp = window.Android && Android.scrollUp && Android.scrollUp();
-                if (!okUp) showReply("પહેલા સેટિંગ્સમાં જઈને Auto-Scroll પરમિશન ચાલુ કરો.", "gu");
+                if (!okUp) showReply("પહેલા સેટિંગ્સમાં જઈને Auto-Scroll પરમિશન ચાલુ કરો બોસ.", "gu");
                 return;
             }
             if (cmd === "go back" || cmd === "back" || cmd.indexOf("pachhal") !== -1) {
@@ -400,8 +414,8 @@
             if (cmd.indexOf("youtube") !== -1 && (cmd.indexOf("search") !== -1 || cmd.indexOf("play") !== -1 || cmd.indexOf("chalav") !== -1 || cmd.indexOf("chalao") !== -1 || cmd.indexOf("par ") !== -1 || cmd.indexOf("ma ") !== -1)) {
                 var q = cmd.replace(/youtube|par|ma|on|search|kar|karo|play|chalav|chalao/g, "").trim();
                 if (q && window.Android && Android.searchYouTube) {
-                    if (hi) showReply("यूट्यूब पर " + q + " सर्च कर रही हूँ।", "hi");
-                    else showReply("યુટ્યુબ પર " + q + " સર્ચ કરી રહી છું.", "gu");
+                    if (hi) showReply("यूट्यूब पर " + q + " सर्च कर रही हूँ बॉस।", "hi");
+                    else showReply("યુટ્યુબ પર " + q + " સર્ચ કરી રહી છું બોસ.", "gu");
                     Android.searchYouTube(q);
                     return;
                 }
@@ -411,8 +425,8 @@
             if ((cmd.indexOf("whatsapp") !== -1 && (cmd.indexOf("message") !== -1 || cmd.indexOf("msg") !== -1 || cmd.indexOf("mokal") !== -1 || cmd.indexOf("bhejo") !== -1)) || cmd.indexOf("message ") === 0 || cmd.indexOf("msg ") === 0) {
                 var msg = rawText.replace(/whatsapp|message|msg|par|ma|mokal|bhejo|send|kar|karo/gi, "").trim();
                 if (msg && window.Android && Android.sendWhatsApp) {
-                    if (hi) showReply("व्हाट्सएप खोल रही हूँ, कॉन्टैक्ट चुन लो।", "hi");
-                    else showReply("વોટ્સએપ ખોલી રહી છું, કોન્ટેક્ટ સિલેક્ટ કરી લે.", "gu");
+                    if (hi) showReply("व्हाट्सएप खोल रही हूँ बॉस, कॉन्टैक्ट चुन लो।", "hi");
+                    else showReply("વોટ્સએપ ખોલી રહી છું બોસ, કોન્ટેક્ટ સિલેક્ટ કરી લો.", "gu");
                     Android.sendWhatsApp(msg);
                     return;
                 }
@@ -422,8 +436,8 @@
             var phoneMatch = cmd.match(/\d{7,12}/);
             if ((cmd.indexOf("call") !== -1 || cmd.indexOf("dial") !== -1 || cmd.indexOf("phone") !== -1) && phoneMatch) {
                 if (window.Android && Android.dialNumber) {
-                    if (hi) showReply(phoneMatch[0] + " पर कॉल लगा रही हूँ।", "hi");
-                    else showReply(phoneMatch[0] + " પર કોલ લગાવી રહી છું.", "gu");
+                    if (hi) showReply(phoneMatch[0] + " पर कॉल लगा रही हूँ बॉस।", "hi");
+                    else showReply(phoneMatch[0] + " પર કોલ લગાવી રહી છું બોસ.", "gu");
                     Android.dialNumber(phoneMatch[0]);
                     return;
                 }
@@ -433,20 +447,20 @@
             if (cmd.indexOf("torch") !== -1 || cmd.indexOf("flash") !== -1 || cmd.indexOf("light") !== -1) {
                 if (window.Android && Android.toggleFlashlight) {
                     var isOn = Android.toggleFlashlight();
-                    if (hi) showReply(isOn ? "फ्लैशलाइट चालू कर दी है।" : "फ्लैशलाइट बंद कर दी है।", "hi");
-                    else showReply(isOn ? "ફ્લેશલાઇટ ચાલુ કરી દીધી છે." : "ફ્લેશલાઇટ બંધ કરી દીધી છે.", "gu");
+                    if (hi) showReply(isOn ? "फ्लैशलाइट चालू कर दी है बॉस।" : "फ्लैशलाइट बंद कर दी है बॉस।", "hi");
+                    else showReply(isOn ? "ફ્લેશલાઇટ ચાલુ કરી દીધી છે બોસ." : "ફ્લેશલાઇટ બંધ કરી દીધી છે બોસ.", "gu");
                 }
                 return;
             }
 
-            // 6. Open ANY Installed App (e.g., "open acode", "spotify khol", "instagram chalu kar")
+            // 6. Open ANY Installed App
             if (cmd.indexOf("open ") !== -1 || cmd.indexOf(" khol") !== -1 || cmd.indexOf(" chalu") !== -1 || cmd.indexOf("start ") === 0) {
                 var appQuery = cmd.replace(/open|kholo|khol|chalu|karo|kar|start|app/g, "").trim();
                 if (appQuery && window.Android && Android.openApp) {
                     var ok = Android.openApp(appQuery);
                     if (ok) {
-                        if (hi) showReply(appQuery + " खोल रही हूँ जान।", "hi");
-                        else showReply(appQuery + " ખોલી રહી છું જાન.", "gu");
+                        if (hi) showReply(appQuery + " खोल रही हूँ बॉस।", "hi");
+                        else showReply(appQuery + " ખોલી રહી છું બોસ.", "gu");
                         return;
                     }
                 }
@@ -455,14 +469,14 @@
             // 7. Time & Date
             if (cmd.indexOf("time") !== -1 || cmd.indexOf("samay") !== -1 || cmd.indexOf("vagya") !== -1 || cmd.indexOf("baje") !== -1) {
                 var t = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
-                if (hi) showReply("अभी " + t + " बजे हैं।", "hi");
-                else showReply("અત્યારે " + t + " વાગ્યા છે.", "gu");
+                if (hi) showReply("अभी " + t + " बजे हैं बॉस।", "hi");
+                else showReply("અત્યારે " + t + " વાગ્યા છે બોસ.", "gu");
                 return;
             }
             if (cmd.indexOf("date") !== -1 || cmd.indexOf("tarikh") !== -1 || cmd.indexOf("din") !== -1) {
                 var d = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
-                if (hi) showReply("आज " + d + " है।", "hi");
-                else showReply("આજે " + d + " છે.", "gu");
+                if (hi) showReply("आज " + d + " है बॉस।", "hi");
+                else showReply("આજે " + d + " છે બોસ.", "gu");
                 return;
             }
 
@@ -470,8 +484,8 @@
             if (cmd.indexOf("search ") === 0 || cmd.indexOf("google par search") !== -1 || cmd.indexOf("google search") !== -1) {
                 var sq = cmd.replace(/google par search|google search|search/g, "").trim();
                 if (sq && window.Android && Android.searchGoogle) {
-                    if (hi) showReply("गूगल पर " + sq + " सर्च कर रही हूँ।", "hi");
-                    else showReply("ગૂગલ પર " + sq + " સર્ચ કરી રહી છું.", "gu");
+                    if (hi) showReply("गूगल पर " + sq + " सर्च कर रही हूँ बॉस।", "hi");
+                    else showReply("ગૂગલ પર " + sq + " સર્ચ કરી રહી છું બોસ.", "gu");
                     Android.searchGoogle(sq);
                 }
                 return;
@@ -483,4 +497,3 @@
     </script>
 </body>
 </html>
-<button id="wake-btn" class="settings-btn" onclick="toggleWakeWord()">🎙️ OFF</button>
