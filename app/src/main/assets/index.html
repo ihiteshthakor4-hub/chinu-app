@@ -438,7 +438,7 @@
                 }
             }
 
-            // 5. Set Alarm (e.g. "set alarm for 6:30" or "alarm 7")
+            // 5. Set Alarm
             if (cmd.indexOf("alarm") !== -1) {
                 var timeMatch = cmd.match(/(\d{1,2})(?::(\d{2}))?/);
                 if (timeMatch && window.Android && Android.setAlarm) {
@@ -451,7 +451,7 @@
                 }
             }
 
-            // 6. Set Timer (e.g. "set timer 5 minutes" or "timer 30 seconds")
+            // 6. Set Timer
             if (cmd.indexOf("timer") !== -1) {
                 var numMatch = cmd.match(/(\d+)/);
                 if (numMatch && window.Android && Android.setTimer) {
@@ -509,9 +509,10 @@
                 return;
             }
 
-            // 10. YouTube Search
-            if (cmd.indexOf("youtube") !== -1 && (cmd.indexOf("search") !== -1 || cmd.indexOf("play") !== -1 || cmd.indexOf("chalav") !== -1 || cmd.indexOf("chalao") !== -1 || cmd.indexOf("par ") !== -1 || cmd.indexOf("ma ") !== -1)) {
-                var q = cmd.replace(/youtube|par|ma|on|search|kar|karo|play|chalav|chalao/g, "").trim();
+            // 10. YouTube Search (ફક્ત સર્ચ શબ્દ જ અલગ કાઢશે)
+            if (cmd.indexOf("youtube") !== -1 && (cmd.indexOf("search") !== -1 || cmd.indexOf("play") !== -1 || cmd.indexOf("chalav") !== -1 || cmd.indexOf("chalao") !== -1)) {
+                var ytMatch = cmd.match(/(?:search|play|chalav|chalao)\s+(.+)/);
+                var q = ytMatch ? ytMatch[1].trim() : cmd.replace(/open|and|then|than|youtube|par|ma|on|search|kar|karo|play|chalav|chalao/g, "").trim();
                 if (q && window.Android && Android.searchYouTube) {
                     showReply("યુટ્યુબ પર " + q + " સર્ચ કરી રહી છું બોસ.", "gu");
                     Android.searchYouTube(q);
@@ -519,12 +520,26 @@
                 }
             }
 
-            // 11. WhatsApp Message
-            if ((cmd.indexOf("whatsapp") !== -1 && (cmd.indexOf("message") !== -1 || cmd.indexOf("msg") !== -1 || cmd.indexOf("mokal") !== -1 || cmd.indexOf("bhejo") !== -1)) || cmd.indexOf("message ") === 0 || cmd.indexOf("msg ") === 0) {
-                var msg = rawText.replace(/whatsapp|message|msg|par|ma|mokal|bhejo|send|kar|karo/gi, "").trim();
-                if (msg && window.Android && Android.sendWhatsApp) {
+            // 11. WhatsApp Auto Contact + Message
+            if (cmd.indexOf("whatsapp") !== -1 && (cmd.indexOf("message") !== -1 || cmd.indexOf("msg") !== -1 || cmd.indexOf("send") !== -1 || cmd.indexOf("mokal") !== -1 || cmd.indexOf("bhejo") !== -1)) {
+                var autoMatch = rawText.match(/(?:search|to)\s+(.+?)\s+(?:and\s+(?:then|than)\s+)?(?:send\s+)?(?:msg|message)\s+(.+)/i);
+                if (autoMatch && window.Android && Android.sendWhatsAppAuto) {
+                    var contact = autoMatch[1].trim();
+                    var onlyMsg = autoMatch[2].trim();
+                    var okAuto = Android.sendWhatsAppAuto(contact, onlyMsg);
+                    if (okAuto) {
+                        showReply(contact + " ને વોટ્સએપ પર " + onlyMsg + " મોકલી રહી છું બોસ.", "gu");
+                    } else {
+                        showReply("પહેલા સેટિંગ્સમાં CHINU Control પરમિશન ચાલુ કરો બોસ.", "gu");
+                    }
+                    return;
+                }
+
+                var msgMatch = rawText.match(/(?:msg|message|send|mokal|bhejo)\s+(.+)/i);
+                var cleanMsg = msgMatch ? msgMatch[1].trim() : "";
+                if (cleanMsg && window.Android && Android.sendWhatsApp) {
                     showReply("વોટ્સએપ ખોલી રહી છું બોસ, કોન્ટેક્ટ સિલેક્ટ કરી લો.", "gu");
-                    Android.sendWhatsApp(msg);
+                    Android.sendWhatsApp(cleanMsg);
                     return;
                 }
             }
