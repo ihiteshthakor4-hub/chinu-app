@@ -429,6 +429,23 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
                 startActivity(intent)
             } catch (_: Exception) {}
         }
+        @JavascriptInterface
+        fun sendWhatsAppAuto(contactName: String, message: String): Boolean {
+            val service = ChinuAccessibilityService.instance ?: return false
+            return try {
+                val launchIntent = packageManager.getLaunchIntentForPackage("com.whatsapp")
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    startActivity(launchIntent)
+                    service.sendWhatsAppAuto(contactName, message)
+                    true
+                } else {
+                    false
+                }
+            } catch (_: Exception) {
+                false
+            }
+        }
 
         @JavascriptInterface
         fun dialNumber(number: String) {

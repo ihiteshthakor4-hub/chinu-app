@@ -82,3 +82,68 @@ class ChinuAccessibilityService : AccessibilityService() {
         }
     }
 }
+    // WhatsApp માં જાતે કોન્ટેક્ટ સર્ચ કરીને ખાલી મેસેજ મોકલવા માટે
+    fun sendWhatsAppAuto(contactName: String, message: String) {
+        handler.postDelayed({
+            val root = rootInActiveWindow ?: return@postDelayed
+            val searchBtn = findSearchButton(root)
+            if (searchBtn != null) {
+                clickNodeOrParent(searchBtn)
+                handler.postDelayed({
+                    val searchRoot = rootInActiveWindow ?: return@postDelayed
+                    val searchBox = findEditableNode(searchRoot)
+                    if (searchBox != null) {
+                        typeIntoNode(searchBox, contactName)
+                        // ૧.૨ સેકન્ડ પછી કોન્ટેક્ટ પર ક્લિક કરો
+                        handler.postDelayed({
+                            val listRoot = rootInActiveWindow ?: return@postDelayed
+                            val contactNode = findContactByName(listRoot, contactName)
+                            if (contactNode != null) {
+                                clickNodeOrParent(contactNode)
+                                // ૧ સેકન્ડ પછી મેસેજ ટાઈપ કરીને Send દબાવો
+                                handler.postDelayed({
+                                    val chatRoot = rootInActiveWindow ?: return@postDelayed
+                                    val msgBox = findEditableNode(chatRoot)
+                                    if (msgBox != null) {
+                                        typeIntoNode(msgBox, message)
+                                        handler.postDelayed({
+                                            val sendRoot = rootInActiveWindow ?: return@postDelayed
+                                            val sendBtn = findButtonByDesc(sendRoot, "send")
+                                            if (sendBtn != null) clickNodeOrParent(sendBtn)
+                                        }, 500L)
+                                    }
+                                }, 1000L)
+                            }
+                        }, 1200L)
+                    }
+                }, 800L)
+            }
+        }, 1500L)
+    }
+
+    private fun findContactByName(node: AccessibilityNodeInfo?, name: String): AccessibilityNodeInfo? {
+        if (node == null) return null
+        val txt = node.text?.toString()?.lowercase() ?: ""
+        // Search box ને છોડીને નીચેના લિસ્ટમાંથી નામ શોધો
+        if (node.isVisibleToUser && !node.isEditable && txt.contains(name.lowercase())) {
+            return node
+        }
+        for (i in 0 until node.childCount) {
+            val found = findContactByName(node.getChild(i), name)
+            if (found != null) return found
+        }
+        return null
+    }
+
+    private fun findButtonByDesc(node: AccessibilityNodeInfo?, keyword: String): AccessibilityNodeInfo? {
+        if (node == null) return null
+        val desc = node.contentDescription?.toString()?.lowercase() ?: ""
+        if (node.isVisibleToUser && desc.contains(keyword)) {
+            return node
+        }
+        for (i in 0 until node.childCount) {
+            val found = findButtonByDesc(node.getChild(i), keyword)
+            if (found != null) return found
+        }
+        return null
+    }
