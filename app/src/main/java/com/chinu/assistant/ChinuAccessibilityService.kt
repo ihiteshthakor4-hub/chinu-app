@@ -2,7 +2,6 @@ package com.chinu.assistant
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
-import android.content.Intent
 import android.graphics.Path
 import android.os.Build
 import android.view.accessibility.AccessibilityEvent
@@ -22,39 +21,41 @@ class ChinuAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {}
 
-    override fun onUnbind(intent: Intent?): Boolean {
+    override fun onDestroy() {
+        super.onDestroy()
         instance = null
-        return super.onUnbind(intent)
     }
 
     fun scrollDown() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            val dm = resources.displayMetrics
-            val x = dm.widthPixels / 2f
-            val path = Path().apply {
-                moveTo(x, dm.heightPixels * 0.75f)
-                lineTo(x, dm.heightPixels * 0.25f)
-            }
-            val gesture = GestureDescription.Builder()
-                .addStroke(GestureDescription.StrokeDescription(path, 0, 350))
-                .build()
-            dispatchGesture(gesture, null, null)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+        val dm = resources.displayMetrics
+        val x = dm.widthPixels / 2f
+        val startY = dm.heightPixels * 0.75f
+        val endY = dm.heightPixels * 0.25f
+        val path = Path().apply {
+            moveTo(x, startY)
+            lineTo(x, endY)
         }
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 300))
+            .build()
+        dispatchGesture(gesture, null, null)
     }
 
     fun scrollUp() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            val dm = resources.displayMetrics
-            val x = dm.widthPixels / 2f
-            val path = Path().apply {
-                moveTo(x, dm.heightPixels * 0.25f)
-                lineTo(x, dm.heightPixels * 0.75f)
-            }
-            val gesture = GestureDescription.Builder()
-                .addStroke(GestureDescription.StrokeDescription(path, 0, 350))
-                .build()
-            dispatchGesture(gesture, null, null)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
+        val dm = resources.displayMetrics
+        val x = dm.widthPixels / 2f
+        val startY = dm.heightPixels * 0.25f
+        val endY = dm.heightPixels * 0.75f
+        val path = Path().apply {
+            moveTo(x, startY)
+            lineTo(x, endY)
         }
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 300))
+            .build()
+        dispatchGesture(gesture, null, null)
     }
 
     fun performBack() {
@@ -63,5 +64,21 @@ class ChinuAccessibilityService : AccessibilityService() {
 
     fun performHome() {
         performGlobalAction(GLOBAL_ACTION_HOME)
+    }
+
+    fun lockScreen(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+        } else {
+            false
+        }
+    }
+
+    fun takeScreenshot(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)
+        } else {
+            false
+        }
     }
 }
