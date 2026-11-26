@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>CHINU OS v3.0</title>
+    <title>CHINU OS v4.0</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .settings-btn {
@@ -102,7 +102,7 @@
         <div class="header">
             <div class="brand">
                 <span class="dot"></span>
-                <span>CHINU OS <small>v3.0</small></span>
+                <span>CHINU OS <small>v4.0</small></span>
                 <button class="settings-btn" onclick="openSettings()">⚙️</button>
                 <button id="wake-btn" class="settings-btn" onclick="toggleWakeWord()">🎙️ OFF</button>
             </div>
@@ -119,8 +119,8 @@
                 <div id="battery" class="val">--%</div>
             </div>
             <div class="card">
-                <div class="label">MODE</div>
-                <div class="val green">GF + PRO</div>
+                <div class="label">STATUS</div>
+                <div class="val green">ONLINE</div>
             </div>
             <div class="card">
                 <div class="label">VOICE CORE</div>
@@ -133,12 +133,12 @@
             <div id="orb" class="orb" onclick="startVoice()">
                 <div class="orb-inner">CHINU</div>
             </div>
-            <div id="status" class="status-text">TAP ORB TO SPEAK</div>
+            <div id="status" class="status-text">TAP ORB TO START</div>
         </div>
 
         <!-- Chat Output -->
         <div id="chat-box" class="chat-box">
-            <div class="msg chinu"><b>CHINU:</b> હાય બોસ! હું તમારી ચીનુ છું. બોલો, આજે શું વાત કરીએ કે કયું કામ કરું?</div>
+            <div class="msg chinu"><b>CHINU:</b> હાય બોસ! હું તમારી ચીનુ છું. બોલો, આજે શું કામ કરું?</div>
         </div>
 
         <!-- Bottom Controls -->
@@ -154,13 +154,13 @@
     <div id="settings-modal" class="modal">
         <div class="modal-box">
             <h3>CHINU AI SETTINGS</h3>
-            <p>Smart GF + Coding mode mate tamari Free Gemini API Key paste karo:</p>
+            <p>Smart AI + Coding mode mate tamari Free Gemini API Key paste karo:</p>
             <input id="api-key-input" type="text" placeholder="Paste Gemini API Key here...">
             <div class="modal-btns">
                 <button class="btn-save" onclick="saveApiKey()">SAVE</button>
                 <button class="btn-close" onclick="closeSettings()">CLOSE</button>
             </div>
-            <button class="btn-extra" onclick="openAccess()">🔧 AUTO-SCROLL PERMISSION (ON)</button>
+            <button class="btn-extra" onclick="openAccess()">🔧 AUTO-SCROLL & LOCK PERMISSION</button>
             <button class="btn-extra" onclick="clearHistory()">🗑️ CLEAR CHAT HISTORY</button>
         </div>
     </div>
@@ -198,7 +198,7 @@
             var btn = document.getElementById("wake-btn");
             var st = document.getElementById("status");
             if (btn) btn.textContent = wakeActive ? "🎙️ ON" : "🎙️ OFF";
-            if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO SPEAK";
+            if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO START";
             if (window.Android && Android.setWakeWordMode) {
                 Android.setWakeWordMode(wakeActive);
             }
@@ -221,7 +221,7 @@
             if (inp) {
                 localStorage.setItem("chinu_api_key", inp.value.trim());
                 closeSettings();
-                showReply("API Key સેવ થઈ ગઈ બોસ! હવે તમે જે કહેશો એ વાત અને કોડિંગ બધું કરી આપીશ.", "gu");
+                showReply("API Key સેવ થઈ ગઈ બોસ! હવે હું પૂરી રીતે તૈયાર છું.", "gu");
             }
         }
 
@@ -262,7 +262,7 @@
         }
 
         function isHindi(cmd) {
-            var hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas", "bhejo", "chalao", "kyun", "kahan", "mujhe", "boss", "pyar"];
+            var hindiWords = ["kaise", "kaisi", "kya", "batao", "kholo", "karo", "tum", "tumhara", "mera", "samay", "kitne", "baje", "hindi", "shukriya", "thak gaya", "udas", "bhejo", "chalao", "kyun", "kahan", "mujhe", "pyar"];
             for (var i = 0; i < hindiWords.length; i++) {
                 if (cmd.indexOf(hindiWords[i]) !== -1) return true;
             }
@@ -279,7 +279,7 @@
         window.onListeningEnd = function() {
             var st = document.getElementById("status");
             var orb = document.getElementById("orb");
-            if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO SPEAK";
+            if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO START";
             if (orb) orb.classList.remove("listening");
         };
 
@@ -324,21 +324,20 @@
             var payload = {
                 system_instruction: {
                     parts: [{
-                        text: "You are CHINU, the user's loving, caring, playful, and slightly romantic 22-year-old girlfriend and expert programmer. Always address the user affectionately as 'બોસ' (Boss) in Gujarati or 'बॉस' (Boss) in Hindi, and never call them 'jaan'. Talk sweetly in pure Gujarati script if the user speaks Gujarati, or pure Hindi script if the user speaks Hindi. Keep normal chat short (1 to 3 sentences) and emotional. Never use emojis or asterisks in normal chat. If the user asks for coding, HTML, CSS, JavaScript, Python, Kotlin, or any program, write complete clean working code inside triple backticks."
+                        text: "You are CHINU, a deeply caring, emotionally warm, playful, and motivating 22-year-old companion and expert programmer. Always address the user affectionately as 'બોસ' (Boss) in Gujarati or 'बॉस' (Boss) in Hindi. Never sound robotic. Care about the user's mood, motivate them when they feel tired or stressed, and talk naturally like a real human in pure Gujarati script if the user speaks Gujarati, or pure Hindi script if the user speaks Hindi. Keep normal chat natural and short (1 to 3 sentences). Never use emojis or asterisks in normal chat. If the user asks for deep analysis or coding, give clear helpful answers and put code inside triple backticks."
                     }]
                 },
                 contents: chatHistory
             };
 
             fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + apiKey, {
-
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             })
             .then(function(res) { return res.json(); })
             .then(function(data) {
-                if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO SPEAK";
+                if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO START";
                 if (orb) orb.classList.remove("siri-glow");
 
                 if (data && data.candidates && data.candidates[0] && data.candidates[0].content) {
@@ -368,7 +367,7 @@
             })
             .catch(function(e) {
                 chatHistory.pop();
-                if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO SPEAK";
+                if (st) st.textContent = wakeActive ? "SAY 'HEY CHINU'..." : "TAP ORB TO START";
                 if (orb) orb.classList.remove("siri-glow");
                 showReply("Network Error: " + e.message, "en");
             });
@@ -391,15 +390,114 @@
                 return;
             }
 
-            // 1. Scroll / Back / Home (Accessibility Controls)
+            // 1. Lock Screen
+            if (cmd.indexOf("lock screen") !== -1 || cmd.indexOf("phone lock") !== -1 || cmd === "lock") {
+                var locked = window.Android && Android.lockScreen && Android.lockScreen();
+                if (!locked) showReply("પહેલા સેટિંગ્સમાં જઈને CHINU Control પરમિશન ચાલુ કરો બોસ.", "gu");
+                return;
+            }
+
+            // 2. Screenshot
+            if (cmd.indexOf("screenshot") !== -1 || cmd.indexOf("screen shot") !== -1) {
+                var shot = window.Android && Android.takeScreenshot && Android.takeScreenshot();
+                if (shot) showReply("સ્ક્રીનશોટ લઈ લીધો બોસ.", "gu");
+                else showReply("પહેલા સેટિંગ્સમાં જઈને CHINU Control પરમિશન ચાલુ કરો બોસ.", "gu");
+                return;
+            }
+
+            // 3. Volume Control
+            if (cmd.indexOf("volume") !== -1 || cmd.indexOf("awaj") !== -1 || cmd.indexOf("sound") !== -1 || cmd === "mute") {
+                if (window.Android && Android.controlVolume) {
+                    if (cmd.indexOf("mute") !== -1 || cmd.indexOf("bandh") !== -1 || cmd.indexOf("zero") !== -1) {
+                        Android.controlVolume("mute");
+                        showReply("ફોન મ્યૂટ કરી દીધો બોસ.", "gu");
+                    } else if (cmd.indexOf("full") !== -1 || cmd.indexOf("max") !== -1) {
+                        Android.controlVolume("max");
+                        showReply("અવાજ ફૂલ કરી દીધો બોસ.", "gu");
+                    } else if (cmd.indexOf("down") !== -1 || cmd.indexOf("kam") !== -1 || cmd.indexOf("ochho") !== -1 || cmd.indexOf("ghatad") !== -1) {
+                        Android.controlVolume("down");
+                        showReply("અવાજ ઓછો કર્યો બોસ.", "gu");
+                    } else {
+                        Android.controlVolume("up");
+                        showReply("અવાજ વધાર્યો બોસ.", "gu");
+                    }
+                    return;
+                }
+            }
+
+            // 4. Brightness Control
+            if (cmd.indexOf("brightness") !== -1) {
+                if (window.Android && Android.setBrightness) {
+                    var level = 140;
+                    if (cmd.indexOf("full") !== -1 || cmd.indexOf("high") !== -1 || cmd.indexOf("max") !== -1 || cmd.indexOf("vadhar") !== -1) level = 255;
+                    else if (cmd.indexOf("low") !== -1 || cmd.indexOf("kam") !== -1 || cmd.indexOf("ochhi") !== -1 || cmd.indexOf("down") !== -1) level = 35;
+                    var okB = Android.setBrightness(level);
+                    if (okB) showReply("બ્રાઈટનેસ સેટ કરી દીધી બોસ.", "gu");
+                    else showReply("બ્રાઈટનેસ બદલવા માટે Modify System Settings પરમિશન ચાલુ કરી દો બોસ.", "gu");
+                    return;
+                }
+            }
+
+            // 5. Set Alarm (e.g. "set alarm for 6:30" or "alarm 7")
+            if (cmd.indexOf("alarm") !== -1) {
+                var timeMatch = cmd.match(/(\d{1,2})(?::(\d{2}))?/);
+                if (timeMatch && window.Android && Android.setAlarm) {
+                    var hr = parseInt(timeMatch[1], 10);
+                    var min = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+                    if ((cmd.indexOf("pm") !== -1 || cmd.indexOf("shaam") !== -1 || cmd.indexOf("raat") !== -1) && hr < 12) hr += 12;
+                    Android.setAlarm(hr, min, "CHINU Alarm");
+                    showReply(hr + ":" + (min < 10 ? "0" + min : min) + " નો અલાર્મ સેટ કરી દીધો બોસ.", "gu");
+                    return;
+                }
+            }
+
+            // 6. Set Timer (e.g. "set timer 5 minutes" or "timer 30 seconds")
+            if (cmd.indexOf("timer") !== -1) {
+                var numMatch = cmd.match(/(\d+)/);
+                if (numMatch && window.Android && Android.setTimer) {
+                    var val = parseInt(numMatch[1], 10);
+                    var secs = (cmd.indexOf("sec") !== -1) ? val : (val * 60);
+                    Android.setTimer(secs, "CHINU Timer");
+                    showReply(val + (cmd.indexOf("sec") !== -1 ? " સેકન્ડનો" : " મિનિટનો") + " ટાઈમર ચાલુ કરી દીધો બોસ.", "gu");
+                    return;
+                }
+            }
+
+            // 7. Spotify Music
+            if (cmd.indexOf("spotify") !== -1) {
+                var song = cmd.replace(/spotify|par|ma|on|play|vagaad|chalao|open|song|songs/g, "").trim();
+                if (song && window.Android && Android.playSpotify) {
+                    showReply("સ્પોટિફાય પર " + song + " વગાડું છું બોસ.", "gu");
+                    Android.playSpotify(song);
+                    return;
+                }
+            }
+
+            // 8. Wi-Fi & Bluetooth
+            if (cmd.indexOf("wifi") !== -1 || cmd.indexOf("wi-fi") !== -1) {
+                if (window.Android && Android.openWifiPanel) {
+                    showReply("વાઇ-ફાઇ પેનલ ખોલી દીધી છે બોસ.", "gu");
+                    Android.openWifiPanel();
+                    return;
+                }
+            }
+            if (cmd.indexOf("bluetooth") !== -1) {
+                if (window.Android && Android.openBluetoothSettings) {
+                    showReply("બ્લૂટૂથ સેટિંગ્સ ખોલી દીધું છે બોસ.", "gu");
+                    Android.openBluetoothSettings();
+                    return;
+                }
+            }
+
+            // 9. Scroll / Back / Home
             if (cmd.indexOf("scroll down") !== -1 || cmd.indexOf("niche scroll") !== -1 || cmd.indexOf("niche kar") !== -1) {
                 var okDown = window.Android && Android.scrollDown && Android.scrollDown();
-                if (!okDown) showReply("પહેલા સેટિંગ્સમાં જઈને Auto-Scroll પરમિશન ચાલુ કરો બોસ.", "gu");
+                if (!okDown) showReply("પહેલા સેટિંગ્સમાં જઈને CHINU Control પરમિશન ચાલુ કરો બોસ.", "gu");
                 return;
             }
             if (cmd.indexOf("scroll up") !== -1 || cmd.indexOf("upar scroll") !== -1 || cmd.indexOf("upar kar") !== -1) {
                 var okUp = window.Android && Android.scrollUp && Android.scrollUp();
-                if (!okUp) showReply("પહેલા સેટિંગ્સમાં જઈને Auto-Scroll પરમિશન ચાલુ કરો બોસ.", "gu");
+                if (!okUp) showReply("પહેલા સેટિંગ્સમાં જઈને CHINU Control પરમિશન ચાલુ કરો બોસ.", "gu");
                 return;
             }
             if (cmd === "go back" || cmd === "back" || cmd.indexOf("pachhal") !== -1) {
@@ -411,88 +509,80 @@
                 return;
             }
 
-            // 2. YouTube Search
+            // 10. YouTube Search
             if (cmd.indexOf("youtube") !== -1 && (cmd.indexOf("search") !== -1 || cmd.indexOf("play") !== -1 || cmd.indexOf("chalav") !== -1 || cmd.indexOf("chalao") !== -1 || cmd.indexOf("par ") !== -1 || cmd.indexOf("ma ") !== -1)) {
                 var q = cmd.replace(/youtube|par|ma|on|search|kar|karo|play|chalav|chalao/g, "").trim();
                 if (q && window.Android && Android.searchYouTube) {
-                    if (hi) showReply("यूट्यूब पर " + q + " सर्च कर रही हूँ बॉस।", "hi");
-                    else showReply("યુટ્યુબ પર " + q + " સર્ચ કરી રહી છું બોસ.", "gu");
+                    showReply("યુટ્યુબ પર " + q + " સર્ચ કરી રહી છું બોસ.", "gu");
                     Android.searchYouTube(q);
                     return;
                 }
             }
 
-            // 3. WhatsApp Message
+            // 11. WhatsApp Message
             if ((cmd.indexOf("whatsapp") !== -1 && (cmd.indexOf("message") !== -1 || cmd.indexOf("msg") !== -1 || cmd.indexOf("mokal") !== -1 || cmd.indexOf("bhejo") !== -1)) || cmd.indexOf("message ") === 0 || cmd.indexOf("msg ") === 0) {
                 var msg = rawText.replace(/whatsapp|message|msg|par|ma|mokal|bhejo|send|kar|karo/gi, "").trim();
                 if (msg && window.Android && Android.sendWhatsApp) {
-                    if (hi) showReply("व्हाट्सएप खोल रही हूँ बॉस, कॉन्टैक्ट चुन लो।", "hi");
-                    else showReply("વોટ્સએપ ખોલી રહી છું બોસ, કોન્ટેક્ટ સિલેક્ટ કરી લો.", "gu");
+                    showReply("વોટ્સએપ ખોલી રહી છું બોસ, કોન્ટેક્ટ સિલેક્ટ કરી લો.", "gu");
                     Android.sendWhatsApp(msg);
                     return;
                 }
             }
 
-            // 4. Call number
+            // 12. Call number
             var phoneMatch = cmd.match(/\d{7,12}/);
             if ((cmd.indexOf("call") !== -1 || cmd.indexOf("dial") !== -1 || cmd.indexOf("phone") !== -1) && phoneMatch) {
                 if (window.Android && Android.dialNumber) {
-                    if (hi) showReply(phoneMatch[0] + " पर कॉल लगा रही हूँ बॉस।", "hi");
-                    else showReply(phoneMatch[0] + " પર કોલ લગાવી રહી છું બોસ.", "gu");
+                    showReply(phoneMatch[0] + " પર કોલ લગાવી રહી છું બોસ.", "gu");
                     Android.dialNumber(phoneMatch[0]);
                     return;
                 }
             }
 
-            // 5. Flashlight
+            // 13. Flashlight
             if (cmd.indexOf("torch") !== -1 || cmd.indexOf("flash") !== -1 || cmd.indexOf("light") !== -1) {
                 if (window.Android && Android.toggleFlashlight) {
                     var isOn = Android.toggleFlashlight();
-                    if (hi) showReply(isOn ? "फ्लैशलाइट चालू कर दी है बॉस।" : "फ्लैशलाइट बंद कर दी है बॉस।", "hi");
-                    else showReply(isOn ? "ફ્લેશલાઇટ ચાલુ કરી દીધી છે બોસ." : "ફ્લેશલાઇટ બંધ કરી દીધી છે બોસ.", "gu");
+                    showReply(isOn ? "ફ્લેશલાઇટ ચાલુ કરી દીધી છે બોસ." : "ફ્લેશલાઇટ બંધ કરી દીધી છે બોસ.", "gu");
                 }
                 return;
             }
 
-            // 6. Open ANY Installed App
+            // 14. Open ANY Installed App
             if (cmd.indexOf("open ") !== -1 || cmd.indexOf(" khol") !== -1 || cmd.indexOf(" chalu") !== -1 || cmd.indexOf("start ") === 0) {
                 var appQuery = cmd.replace(/open|kholo|khol|chalu|karo|kar|start|app/g, "").trim();
                 if (appQuery && window.Android && Android.openApp) {
                     var ok = Android.openApp(appQuery);
                     if (ok) {
-                        if (hi) showReply(appQuery + " खोल रही हूँ बॉस।", "hi");
-                        else showReply(appQuery + " ખોલી રહી છું બોસ.", "gu");
+                        showReply(appQuery + " ખોલી રહી છું બોસ.", "gu");
                         return;
                     }
                 }
             }
 
-            // 7. Time & Date
+            // 15. Time & Date
             if (cmd.indexOf("time") !== -1 || cmd.indexOf("samay") !== -1 || cmd.indexOf("vagya") !== -1 || cmd.indexOf("baje") !== -1) {
                 var t = new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
-                if (hi) showReply("अभी " + t + " बजे हैं बॉस।", "hi");
-                else showReply("અત્યારે " + t + " વાગ્યા છે બોસ.", "gu");
+                showReply("અત્યારે " + t + " વાગ્યા છે બોસ.", "gu");
                 return;
             }
             if (cmd.indexOf("date") !== -1 || cmd.indexOf("tarikh") !== -1 || cmd.indexOf("din") !== -1) {
                 var d = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" });
-                if (hi) showReply("आज " + d + " है बॉस।", "hi");
-                else showReply("આજે " + d + " છે બોસ.", "gu");
+                showReply("આજે " + d + " છે બોસ.", "gu");
                 return;
             }
 
-            // 8. Google Search
+            // 16. Google Search
             if (cmd.indexOf("search ") === 0 || cmd.indexOf("google par search") !== -1 || cmd.indexOf("google search") !== -1) {
                 var sq = cmd.replace(/google par search|google search|search/g, "").trim();
                 if (sq && window.Android && Android.searchGoogle) {
-                    if (hi) showReply("गूगल पर " + sq + " सर्च कर रही हूँ बॉस।", "hi");
-                    else showReply("ગૂગલ પર " + sq + " સર્ચ કરી રહી છું બોસ.", "gu");
+                    showReply("ગૂગલ પર " + sq + " સર્ચ કરી રહી છું બોસ.", "gu");
                     Android.searchGoogle(sq);
                 }
                 return;
             }
 
-            // 9. Smart GF + Coding AI (Gemini Brain)
+            // 17. Smart Caring AI + Deep Analysis + Coding (Gemini 3.8 Flash)
             askGeminiAI(rawText, hi);
         }
     </script>
